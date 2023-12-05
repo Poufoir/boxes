@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import math
 from functools import partial
+from typing import Optional
 
 from boxes import Boxes, edges, boolarg, lids
 
@@ -90,12 +91,18 @@ You will likely need to cut each of the dividers you want multiple times.
 
     ui_group = "Tray"
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        sx: Optional[str] = None,
+        sy: Optional[str] = None,
+        h: Optional[str] = None,
+        outside: Optional[str] = None,
+    ) -> None:
         Boxes.__init__(self)
         self.addSettingsArgs(edges.FingerJointSettings)
         self.addSettingsArgs(edges.HandleEdgeSettings)
         self.addSettingsArgs(lids.LidSettings)
-        self.buildArgParser("sx", "sy", "h", "outside")
+        self.buildArgParser(sx=sx, sy=sy, h=h, outside=outside)
         self.addSettingsArgs(SlotSettings)
         self.addSettingsArgs(NotchSettings)
         self.addSettingsArgs(DividerSettings)
