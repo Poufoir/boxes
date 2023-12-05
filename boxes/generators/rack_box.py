@@ -258,7 +258,7 @@ You will likely need to cut each of the dividers you want multiple times.
             # with margin
             - self.Divider_bottom_margin
         )
-        for i in range(len(self.sy)):
+        for i in range(len(self.sy)-1):
             self.generate_divider(
                 self.sx,
                 divider_height,
