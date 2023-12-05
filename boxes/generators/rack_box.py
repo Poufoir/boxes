@@ -97,6 +97,9 @@ You will likely need to cut each of the dividers you want multiple times.
         sy: Optional[str] = None,
         h: Optional[str] = None,
         outside: Optional[str] = None,
+        left_wall: bool = True,
+        right_wall: bool = True,
+        bottom_wall: bool = False,
     ) -> None:
         Boxes.__init__(self)
         self.addSettingsArgs(edges.FingerJointSettings)
@@ -115,19 +118,19 @@ You will likely need to cut each of the dividers you want multiple times.
         self.argparser.add_argument(
             "--left_wall",
             type=boolarg,
-            default=True,
+            default=left_wall,
             help="generate wall on the left side",
         )
         self.argparser.add_argument(
             "--right_wall",
             type=boolarg,
-            default=True,
+            default=right_wall,
             help="generate wall on the right side",
         )
         self.argparser.add_argument(
             "--bottom",
             type=boolarg,
-            default=False,
+            default=bottom_wall,
             help="generate wall on the bottom",
         )
         self.argparser.add_argument(
@@ -143,13 +146,13 @@ You will likely need to cut each of the dividers you want multiple times.
             raise ValueError("You need at least one side wall to generate this tray")
 
         # We need to adjust height before slot generation
-        if self.outside:
-            if self.bottom:
-                self.h -= self.thickness
-        else:
+
+        if not self.outside:
             # If the parameter 'h' is the inner height of the content itself,
             # then the actual tray height needs to be adjusted with the angle
             self.h = self.h * math.cos(math.radians(self.Slot_angle))
+        elif self.bottom:
+            self.h -= self.thickness
 
         slot_descriptions = SlotDescriptionsGenerator().generate_all_same_angles(
             self.sy,
@@ -185,35 +188,37 @@ You will likely need to cut each of the dividers you want multiple times.
             if self.notches_in_wall
             else "e"
         )
-        for _ in range(2):
+        for wall in range(2):
             self.rectangularWall(
                 facing_wall_length,
                 self.h,
                 [
-                    bottom_edge(self.bottom, _ and self.handle),
+                    bottom_edge(self.bottom, wall and self.handle),
                     side_edge(self.right_wall),
                     upper_edge,
                     side_edge(self.left_wall),
                 ],
                 callback=[partial(self.generate_finger_holes, self.h)],
                 move="up",
-                label="Front" if _ else "Back",
+                label="Front" if wall else "Back",
             )
 
         # Side walls (outer & inner) with slots to support dividers
         side_wall_length = slot_descriptions.total_length()
-        for _ in range(side_walls_number):
-            if _ < side_walls_number - (len(self.sx) - 1):
-                be = "F" if self.bottom else "e"
+        for side_wall in range(side_walls_number):
+            if not self.bottom:
+                be = "e"
+            elif side_wall < side_walls_number - (len(self.sx) - 1):
+                be = "F"
             else:
-                be = "f" if self.bottom else "e"
+                be = "f"
             se = DividerSlotsEdge(self, slot_descriptions.descriptions)
             self.rectangularWall(
                 side_wall_length,
                 self.h,
                 [be, "f", se, "f"],
                 move="up",
-                label="Sidepiece " + str(_ + 1),
+                label="Sidepiece " + str(side_wall + 1),
             )
 
         self.lid(facing_wall_length, side_wall_length)
@@ -253,33 +258,15 @@ You will likely need to cut each of the dividers you want multiple times.
             # with margin
             - self.Divider_bottom_margin
         )
-        self.generate_divider(
-            self.sx,
-            divider_height,
-            "up",
-            first_tab_width=self.thickness if self.left_wall else 0,
-            second_tab_width=self.thickness if self.right_wall else 0,
-        )
-        for tabs, asymmetric_tabs in [
-            (self.thickness, None),
-            (self.thickness / 2, None),
-            (self.thickness, 0.5),
-        ]:
-            with self.saved_context():
-                for i, length in enumerate(self.sx):
-                    self.generate_divider(
-                        [length],
-                        divider_height,
-                        "right",
-                        first_tab_width=tabs if self.left_wall or i > 0 else 0,
-                        second_tab_width=tabs
-                        if self.right_wall or i < (len(self.sx) - 1)
-                        else 0,
-                        asymmetric_tabs=asymmetric_tabs,
-                    )
-                    if asymmetric_tabs:
-                        self.moveTo(-tabs, self.spacing)
-            self.generate_divider(self.sx, divider_height, "up only")
+        for i in range(len(self.sy)):
+            self.generate_divider(
+                self.sx,
+                divider_height,
+                "up",
+                first_tab_width=self.thickness if self.left_wall else 0,
+                second_tab_width=self.thickness if self.right_wall else 0,
+                label=str(i),
+            )
 
         if self.debug:
             debug_info = ["Debug"]
@@ -325,6 +312,7 @@ You will likely need to cut each of the dividers you want multiple times.
         first_tab_width=0,
         second_tab_width=0,
         asymmetric_tabs=None,
+        label="",
     ):
         total_width = (
             sum(widths)
@@ -398,7 +386,7 @@ You will likely need to cut each of the dividers you want multiple times.
             )
 
         # Move for next piece
-        self.move(total_width, height, move, label="Divider")
+        self.move(total_width, height, move, label=f"Divider {label}")
 
 
 class SlottedEdgeDescriptions:
