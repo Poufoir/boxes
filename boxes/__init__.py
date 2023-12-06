@@ -21,47 +21,45 @@ import math
 import random
 import re
 import sys
-from argparse import ArgumentParser
-from contextlib import contextmanager
+import qrcode
+import gettext
+
 from functools import wraps
 from shlex import quote
 from typing import Any
+from argparse import ArgumentParser
+from contextlib import contextmanager
 from xml.sax.saxutils import quoteattr
-
 from shapely.geometry import Polygon, Point, LineString
 from shapely.ops import split
-import gettext
+from typing import Callable
 
-from boxes import edges
-from boxes import formats
-from boxes import gears
-from boxes import parts
-from boxes import pulley
-from boxes import svgutil
+from boxes import edges, formats, gears, parts, pulley, svgutil
 from boxes.Color import Color
 from boxes.vectors import kerf
-
-import qrcode
 from boxes.qrcode_factory import BoxesQrCodeFactory
 
 ### Helpers
 
 
-def dist(dx, dy):
+def dist(dx: float, dy: float):
     """
     Return distance
 
     :param dx: delta x
     :param dy: delay y
     """
-    return (dx * dx + dy * dy) ** 0.5
+    return (dx**2 + dy**2) ** 0.5
 
 
-def restore(func):
-    """
-    Wrapper: Restore coordinates after function
+def restore(func: Callable) -> Callable:
+    """Wrapper: Restore coordinates after function
 
-    :param func: function to wrap
+    Args:
+        func (Callable): Function to wrap
+
+    Returns:
+        Callable: function wrapped
     """
 
     @wraps(func)
@@ -74,7 +72,7 @@ def restore(func):
     return f
 
 
-def holeCol(func):
+def holeCol(func: Callable):
     """
     Wrapper: color holes differently
 
@@ -153,7 +151,7 @@ class NutHole:
 ##############################################################################
 
 
-def argparseSections(s):
+def argparseSections(s:str):
     """
     Parse sections parameter
 
@@ -193,7 +191,7 @@ class ArgparseEdgeType:
     edges: list[str] = []
 
     def __init__(self, edges: str | None = None) -> None:
-        if edges:
+        if edges is not None:
             self.edges = list(edges)
 
     def __call__(self, pattern):
@@ -310,13 +308,13 @@ class fillHolesSettings(edges.Settings):
 class Boxes:
     """Main class -- Generator should subclass this"""
 
-    webinterface = True
-    ui_group = "Misc"
-    UI = ""
+    webinterface:bool = True
+    ui_group:str = "Misc"
+    UI:str = ""
 
     description: str = ""  # Markdown syntax is supported
 
-    def __init__(self) -> None:
+    def __init__(self, thickness:float = 3, output:str = "box.svg") -> None:
         self.formats = formats.Formats()
         self.ctx = None
         description: str = self.__doc__ or ""
@@ -340,7 +338,7 @@ class Boxes:
         }
 
         # Dummy attribute for static analytic tools. Will be overwritten by `argparser` at runtime.
-        self.thickness: float = 0.0
+        self.thickness: float = thickness
 
         self.argparser._action_groups[1].title = self.__class__.__name__ + " Settings"
         defaultgroup = self.argparser.add_argument_group("Default Settings")
@@ -348,14 +346,14 @@ class Boxes:
             "--thickness",
             action="store",
             type=float,
-            default=3.0,
+            default=thickness,
             help="thickness of the material (in mm) [\U0001F6C8](https://florianfesti.github.io/boxes/html/usermanual.html#thickness)",
         )
         defaultgroup.add_argument(
             "--output",
             action="store",
             type=str,
-            default="box.svg",
+            default=output,
             help="name of resulting file",
         )
         defaultgroup.add_argument(
@@ -429,19 +427,24 @@ class Boxes:
         finally:
             cr.restore()
 
-    def set_source_color(self, color):
+    def set_source_color(self, color: Color) -> None:
+        """Sets the color of the pen.
+
+        Args:
+            color (Color): The color to use
         """
-        Sets the color of the pen.
-        """
+
         self.ctx.set_source_rgb(*color)
 
-    def set_font(self, style, bold=False, italic=False):
+    def set_font(self, style: str, bold=False, italic=False):
+        """Set font style used
+
+        Args:
+            style (str): "serif", "sans-serif" or "monospaced"
+            bold (bool, optional): Use bold font. Defaults to False.
+            italic (bool, optional): Use italic font. Defaults to False.
         """
-        Set font style used
-        :param style: "serif", "sans-serif" or "monospaced"
-        :param bold: Use bold font
-        :param italic: Use italic font
-        """
+
         self.ctx.set_font(style, bold, italic)
 
     def open(self):
@@ -459,10 +462,10 @@ class Boxes:
 
         if self.format == "svg_Ponoko":
             self.ctx.set_line_width(0.01)
-            self.set_source_color(Color.BLUE)
+            self.set_source_color(Color.INNER_CUT)
         else:
             self.ctx.set_line_width(max(2 * self.burn, 0.05))
-            self.set_source_color(Color.BLACK)
+            self.set_source_color(Color.OUTER_CUT)
 
         self.spacing = 2 * self.burn + 0.5 * self.thickness
         self.set_font("sans-serif")
@@ -3091,7 +3094,9 @@ class Boxes:
                 except TypeError:
                     square = val
                 if margin:
-                    nborders.extend([0.0, -90, margin, 90, square, 90, margin, -90, 0.0])
+                    nborders.extend(
+                        [0.0, -90, margin, 90, square, 90, margin, -90, 0.0]
+                    )
                 else:
                     nborders.append(val)
 

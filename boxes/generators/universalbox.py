@@ -125,7 +125,7 @@ class UniversalBox(_TopEdge):
                     move="up",
                     label="top hole",
                 )
-                self.set_source_color(Color.BLACK)
+                self.set_source_color(Color.OUTER_CUT)
             self.drawLid(x, y, self.top_edge, [d2, d3])
             self.lid(x, y, self.top_edge)
 
