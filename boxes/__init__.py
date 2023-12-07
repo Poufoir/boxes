@@ -151,7 +151,7 @@ class NutHole:
 ##############################################################################
 
 
-def argparseSections(s:str):
+def argparseSections(s: str):
     """
     Parse sections parameter
 
@@ -308,13 +308,36 @@ class fillHolesSettings(edges.Settings):
 class Boxes:
     """Main class -- Generator should subclass this"""
 
-    webinterface:bool = True
-    ui_group:str = "Misc"
-    UI:str = ""
+    webinterface: bool = True
+    ui_group: str = "Misc"
+    UI: str = ""
 
     description: str = ""  # Markdown syntax is supported
 
-    def __init__(self, thickness:float = 3, output:str = "box.svg") -> None:
+    def __init__(
+        self,
+        thickness: float = 3,
+        output: str = "box.svg",
+        format: str = "svg",
+        tabs: float = 0.0,
+        qr_code: bool = False,
+        debug: bool = False,
+        labels: bool = True,
+        reference: float = 100,
+        inner_corners: str = "loop",
+        burn: float = 0.1,
+    ) -> None:
+        self.thickness = thickness
+        self.output = output
+        self.format = format
+        self.tabs = tabs
+        self.qr_code = qr_code
+        self.debug = debug
+        self.labels = labels
+        self.reference = reference
+        self.inner_corners = inner_corners
+        self.burn = burn
+
         self.formats = formats.Formats()
         self.ctx = None
         description: str = self.__doc__ or ""
@@ -323,7 +346,6 @@ class Boxes:
         self.argparser = ArgumentParser(description=description)
         self.edgesettings: dict[Any, Any] = {}
         self.inkscapefile = None
-        self.non_default_args: dict[Any, Any] = {}
         self.translations = gettext.NullTranslations()
 
         self.metadata = {
@@ -342,78 +364,6 @@ class Boxes:
 
         self.argparser._action_groups[1].title = self.__class__.__name__ + " Settings"
         defaultgroup = self.argparser.add_argument_group("Default Settings")
-        defaultgroup.add_argument(
-            "--thickness",
-            action="store",
-            type=float,
-            default=thickness,
-            help="thickness of the material (in mm) [\U0001F6C8](https://florianfesti.github.io/boxes/html/usermanual.html#thickness)",
-        )
-        defaultgroup.add_argument(
-            "--output",
-            action="store",
-            type=str,
-            default=output,
-            help="name of resulting file",
-        )
-        defaultgroup.add_argument(
-            "--format",
-            action="store",
-            type=str,
-            default="svg",
-            choices=self.formats.getFormats(),
-            help="format of resulting file [\U0001F6C8](https://florianfesti.github.io/boxes/html/usermanual.html#format)",
-        )
-        defaultgroup.add_argument(
-            "--tabs",
-            action="store",
-            type=float,
-            default=0.0,
-            help="width of tabs holding the parts in place (in mm)(not supported everywhere) [\U0001F6C8](https://florianfesti.github.io/boxes/html/usermanual.html#tabs)",
-        )
-        defaultgroup.add_argument(
-            "--qr_code",
-            action="store",
-            type=boolarg,
-            default=False,
-            help="Add a QR Code with link or command line to the generated output",
-        )
-        defaultgroup.add_argument(
-            "--debug",
-            action="store",
-            type=boolarg,
-            default=False,
-            help="print surrounding boxes for some structures [\U0001F6C8](https://florianfesti.github.io/boxes/html/usermanual.html#debug)",
-        )
-        defaultgroup.add_argument(
-            "--labels",
-            action="store",
-            type=boolarg,
-            default=True,
-            help="label the parts (where available)",
-        )
-        defaultgroup.add_argument(
-            "--reference",
-            action="store",
-            type=float,
-            default=100,
-            help="print reference rectangle with given length (in mm)(zero to disable) [\U0001F6C8](https://florianfesti.github.io/boxes/html/usermanual.html#reference)",
-        )
-        defaultgroup.add_argument(
-            "--inner_corners",
-            action="store",
-            type=str,
-            default="loop",
-            choices=["loop", "corner", "backarc"],
-            help="style for inner corners [\U0001F6C8](https://florianfesti.github.io/boxes/html/usermanual.html#inner-corners)",
-        )
-        defaultgroup.add_argument(
-            "--burn",
-            action="store",
-            type=float,
-            default=0.1,
-            help="burn correction (in mm)(bigger values for tighter fit) [\U0001F6C8](https://florianfesti.github.io/boxes/html/usermanual.html#burn)",
-        )
 
     @contextmanager
     def saved_context(self):
@@ -648,6 +598,7 @@ class Boxes:
 
     def addSettingsArgs(self, settings, prefix=None, **defaults):
         prefix = prefix or settings.__name__[: -len("Settings")]
+        print(prefix)
         settings.parserArguments(self.argparser, prefix, **defaults)
         self.edgesettings[prefix] = {}
 
@@ -664,17 +615,7 @@ class Boxes:
             del args[-1]
         args = [a for a in args if not a.startswith("--tab=")]
 
-        def cliquote(s):
-            s = s.replace("\r", "")
-            s = s.replace("\n", "\\n")
-            return quote(s)
-
-        self.metadata["cli"] = (
-            "boxes "
-            + self.__class__.__name__
-            + " "
-            + " ".join(cliquote(arg) for arg in args)
-        )
+        non_default_args: dict[Any, Any] = {}
 
         for key, value in vars(self.argparser.parse_args(args=args)).items():
             default = self.argparser.get_default(key)
@@ -686,23 +627,12 @@ class Boxes:
                     continue
             setattr(self, key, value)
             if value != default:
-                self.non_default_args[key] = value
+                non_default_args[key] = value
 
         # Change file ending to format if not given explicitly
         format = getattr(self, "format", "svg")
         if getattr(self, "output", None) == "box.svg":
             self.output = "box." + format.split("_")[0]
-
-        self.metadata["cli_short"] = (
-            "boxes "
-            + self.__class__.__name__
-            + " "
-            + " ".join(
-                cliquote(arg)
-                for arg in args
-                if (arg.split("=")[0][2:] in self.non_default_args)
-            )
-        )
 
     def addPart(self, part, name=None):
         """

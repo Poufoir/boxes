@@ -19,7 +19,8 @@ import math
 from functools import partial
 from typing import Optional
 
-from boxes import Boxes, edges, boolarg, lids
+from boxes import Boxes, edges, lids
+from boxes.edges import Settings
 
 
 class NotchSettings(edges.Settings):
@@ -93,52 +94,40 @@ You will likely need to cut each of the dividers you want multiple times.
 
     def __init__(
         self,
-        sx: Optional[str] = None,
-        sy: Optional[str] = None,
-        h: Optional[str] = None,
-        outside: Optional[str] = None,
+        sx: Optional[str] = "50*3",
+        sy: Optional[str] = "50*3",
+        h: float = 100.0,
+        outside: bool = True,
+        notches_in_wall: bool = True,
         left_wall: bool = True,
         right_wall: bool = True,
-        bottom_wall: bool = False,
+        bottom: bool = False,
+        handle: bool = False,
+        **kwargs,
     ) -> None:
-        Boxes.__init__(self)
-        self.addSettingsArgs(edges.FingerJointSettings)
-        self.addSettingsArgs(edges.HandleEdgeSettings)
-        self.addSettingsArgs(lids.LidSettings)
-        self.buildArgParser(sx=sx, sy=sy, h=h, outside=outside)
-        self.addSettingsArgs(SlotSettings)
-        self.addSettingsArgs(NotchSettings)
-        self.addSettingsArgs(DividerSettings)
-        self.argparser.add_argument(
-            "--notches_in_wall",
-            type=boolarg,
-            default=True,
-            help="generate the same notches on the walls that are on the dividers",
-        )
-        self.argparser.add_argument(
-            "--left_wall",
-            type=boolarg,
-            default=left_wall,
-            help="generate wall on the left side",
-        )
-        self.argparser.add_argument(
-            "--right_wall",
-            type=boolarg,
-            default=right_wall,
-            help="generate wall on the right side",
-        )
-        self.argparser.add_argument(
-            "--bottom",
-            type=boolarg,
-            default=bottom_wall,
-            help="generate wall on the bottom",
-        )
-        self.argparser.add_argument(
-            "--handle",
-            type=boolarg,
-            default=False,
-            help="add handle to the bottom",
-        )
+        Boxes.__init__(self, **kwargs)
+
+        self.notches_in_wall = notches_in_wall
+        self.left_wall = left_wall
+        self.right_wall = right_wall
+        self.bottom = bottom
+        self.handle = handle
+        self.sx = sx
+        self.sy = sy
+        self.h = h
+        self.outside = outside
+
+        setting: Settings
+        for setting in [
+            edges.FingerJointSettings,
+            edges.HandleEdgeSettings,
+            lids.LidSettings,
+            SlotSettings,
+            NotchSettings,
+            DividerSettings,
+        ]:
+            for key, arg in setting.get_arguments():
+                setattr(self, key, arg)
 
     def render(self):
         side_walls_number = len(self.sx) - 1 + sum([self.left_wall, self.right_wall])
