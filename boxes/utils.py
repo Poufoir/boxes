@@ -46,3 +46,9 @@ def argparseSections(s: str, group: int = 3):
         result.append(0.0)
 
     return result
+
+
+def edge_init(box, list_edges: List):
+    for setting in list_edges:
+        for key, arg in setting.get_arguments():
+            setattr(box, key, arg)

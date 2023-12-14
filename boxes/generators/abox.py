@@ -17,7 +17,7 @@ from typing import List
 from boxes.lids import LidSettings
 from boxes.default_box import DefaultBoxes
 from boxes import edges
-from boxes.edges import Settings
+from boxes.utils import edge_init
 
 
 class ABox(DefaultBoxes):
@@ -76,10 +76,7 @@ class ABox(DefaultBoxes):
             inner_corners,
             burn,
         )
-        setting: Settings
-        for setting in [edges.FingerJointSettings, LidSettings]:
-            for key, arg in setting.get_arguments():
-                setattr(self, key, arg)
+        edge_init(self, [edges.FingerJointSettings, LidSettings])
 
     def render(self):
         x, y, h = self.x, self.y, self.h
