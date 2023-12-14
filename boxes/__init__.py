@@ -15,41 +15,28 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from __future__ import annotations
 
-import argparse
 import copy
 import math
 import random
-import re
 import sys
 import qrcode
 import gettext
 
 from functools import wraps
-from shlex import quote
-from typing import Any
+from typing import Any, Callable
 from argparse import ArgumentParser
 from contextlib import contextmanager
 from xml.sax.saxutils import quoteattr
 from shapely.geometry import Polygon, Point, LineString
 from shapely.ops import split
-from typing import Callable
 
 from boxes import edges, formats, gears, parts, pulley, svgutil
 from boxes.Color import Color
 from boxes.vectors import kerf
 from boxes.qrcode_factory import BoxesQrCodeFactory
+from boxes.utils import dist, argparseSections
 
 ### Helpers
-
-
-def dist(dx: float, dy: float):
-    """
-    Return distance
-
-    :param dx: delta x
-    :param dy: delay y
-    """
-    return (dx**2 + dy**2) ** 0.5
 
 
 def restore(func: Callable) -> Callable:
@@ -149,39 +136,6 @@ class NutHole:
 ##############################################################################
 ### Argument types
 ##############################################################################
-
-
-def argparseSections(s: str):
-    """
-    Parse sections parameter
-
-    :param s: string to parse
-    """
-
-    result = []
-
-    s = re.split(r"\s|:", s)
-
-    try:
-        for part in s:
-            m = re.match(r"^(\d+(\.\d+)?)/(\d+)$", part)
-            if m:
-                n = int(m.group(3))
-                result.extend([float(m.group(1)) / n] * n)
-                continue
-            m = re.match(r"^(\d+(\.\d+)?)\*(\d+)$", part)
-            if m:
-                n = int(m.group(3))
-                result.extend([float(m.group(1))] * n)
-                continue
-            result.append(float(part))
-    except ValueError:
-        raise argparse.ArgumentTypeError("Don't understand sections string")
-
-    if not result:
-        result.append(0.0)
-
-    return result
 
 
 class ArgparseEdgeType:
@@ -363,7 +317,7 @@ class Boxes:
         self.thickness: float = thickness
 
         self.argparser._action_groups[1].title = self.__class__.__name__ + " Settings"
-        defaultgroup = self.argparser.add_argument_group("Default Settings")
+        self.argparser.add_argument_group("Default Settings")
 
     @contextmanager
     def saved_context(self):
@@ -424,23 +378,19 @@ class Boxes:
             self.move(self.reference, 10, "up", before=True)
             self.ctx.rectangle(0, 0, self.reference, 10)
             if self.reference < 80:
-                self.text(
-                    f"{self.reference:.2f}mm, burn:{self.burn:.2f}mm",
-                    self.reference + 5,
-                    5,
-                    fontsize=8,
-                    align="middle left",
-                    color=Color.ANNOTATIONS,
-                )
+                x_param = self.reference + 5
+                align_param = "middle left"
             else:
-                self.text(
-                    f"{self.reference:.2f}mm, burn:{self.burn:.2f}mm",
-                    self.reference / 2.0,
-                    5,
-                    fontsize=8,
-                    align="middle center",
-                    color=Color.ANNOTATIONS,
-                )
+                x_param = self.reference / 2.0
+                align_param = "middle center"
+            self.text(
+                f"{self.reference:.2f}mm, burn:{self.burn:.2f}mm",
+                x_param,
+                5,
+                fontsize=8,
+                align=align_param,
+                color=Color.ANNOTATIONS,
+            )
             self.move(self.reference, 10, "up")
             if self.qr_code:
                 self.renderQrCode()
@@ -598,7 +548,6 @@ class Boxes:
 
     def addSettingsArgs(self, settings, prefix=None, **defaults):
         prefix = prefix or settings.__name__[: -len("Settings")]
-        print(prefix)
         settings.parserArguments(self.argparser, prefix, **defaults)
         self.edgesettings[prefix] = {}
 
@@ -2153,33 +2102,6 @@ class Boxes:
                                 self.corner(-180, max_radius)
                                 self.edge(x_end - x_start)
                                 self.corner(-180, max_radius)
-
-                            if self.debug and False:  # enable to debug short lines
-                                self.set_source_color(Color.ANNOTATIONS)
-                                with self.saved_context():
-                                    self.moveTo(x_start, y_start, 0)
-                                    self.edge(x_end - x_start)
-
-                                s = (
-                                    "short - y: "
-                                    + str(round(y, 1))
-                                    + " xs: "
-                                    + str(round(x_start, 1))
-                                    + " xe: "
-                                    + str(round(x_end, 1))
-                                    + " l: "
-                                    + str(round(line_this.length, 1))
-                                    + " max: "
-                                    + str(round(segment_length[segment_max], 1))
-                                )
-                                with self.saved_context():
-                                    self.text(
-                                        s,
-                                        x_start,
-                                        y_start,
-                                        fontsize=2,
-                                        color=Color.ANNOTATIONS,
-                                    )
 
                             segment_max = 1
                             # short segment shall be skipped if a short segment shall start the line

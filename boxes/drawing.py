@@ -352,7 +352,6 @@ class Context:
         self._mxy = (mx3, my3)
 
     def stroke(self):
-        # print('stroke stack-level=',len(self._stack),'lastpath=',self._last_path,)
         self._last_path = self._dwg.stroke(rgb=self._rgb, lw=self._lw)
         self._xy = (0, 0)
 

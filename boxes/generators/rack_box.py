@@ -17,9 +17,10 @@ from __future__ import annotations
 
 import math
 from functools import partial
-from typing import Optional
+from typing import List
 
-from boxes import Boxes, edges, lids
+from boxes import edges, lids
+from boxes.default_box import DefaultBoxes
 from boxes.edges import Settings
 
 
@@ -74,38 +75,78 @@ class DividerSettings(edges.Settings):
     }
 
 
-class DividerTray(Boxes):
+class DividerTray(DefaultBoxes):
     """Divider tray - rows and dividers"""
 
     description = """
-Adding '0:' at the start of the sy parameter adds a slot at the very back. Adding ':0' at the end of sy adds a slot meeting the bottom at the very front. This is especially useful if slot angle is set above zero.
+    Adding '0:' at the start of the sy parameter adds a slot at the very back. Adding ':0' at the end of sy adds a slot meeting the bottom at the very front. This is especially useful if slot angle is set above zero.
 
-There are 4 different sets of dividers rendered:
+    There are 4 different sets of dividers rendered:
 
-* With asymmetric tabs so the tabs fit on top of each other
-* With tabs of half wall thickness that can go side by side
-* With tabs of a full wall thickness
-* One single divider spanning across all columns
+    * With asymmetric tabs so the tabs fit on top of each other
+    * With tabs of half wall thickness that can go side by side
+    * With tabs of a full wall thickness
+    * One single divider spanning across all columns
 
-You will likely need to cut each of the dividers you want multiple times.
-"""
+    You will likely need to cut each of the dividers you want multiple times.
+    """
 
     ui_group = "Tray"
 
     def __init__(
         self,
-        sx: Optional[str] = "50*3",
-        sy: Optional[str] = "50*3",
-        h: float = 100.0,
+        x: float = 100,
+        y: float = 100,
+        h: float = 100,
+        sx: str | List = "50*3",
+        sy: str | List = "50*3",
+        sh: str | List = "50*3",
+        hi: float = 0,
+        hole_dD: str = "3.5:6.5",
+        bottom_edge: str = "h",
+        top_edge: str = "e",
         outside: bool = True,
+        nema_mount: int = 23,
+        thickness: float = 3,
+        output: str = "box.svg",
+        format: str = "svg",
+        tabs: float = 0,
+        qr_code: bool = False,
+        debug: bool = False,
+        labels: bool = True,
+        reference: float = 100,
+        inner_corners: str = "loop",
+        burn: float = 0.1,
         notches_in_wall: bool = True,
         left_wall: bool = True,
         right_wall: bool = True,
         bottom: bool = False,
         handle: bool = False,
-        **kwargs,
     ) -> None:
-        Boxes.__init__(self, **kwargs)
+        super().__init__(
+            x,
+            y,
+            h,
+            sx,
+            sy,
+            sh,
+            hi,
+            hole_dD,
+            bottom_edge,
+            top_edge,
+            outside,
+            nema_mount,
+            thickness,
+            output,
+            format,
+            tabs,
+            qr_code,
+            debug,
+            labels,
+            reference,
+            inner_corners,
+            burn,
+        )
 
         self.notches_in_wall = notches_in_wall
         self.left_wall = left_wall

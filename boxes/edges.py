@@ -14,7 +14,6 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from __future__ import annotations
 
-import argparse
 import inspect
 import math
 import re
@@ -22,39 +21,8 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 from boxes import gears
+from boxes.utils import argparseSections
 
-
-def argparseSections(s: str) -> list[float]:
-    """
-    Parse sections parameter
-
-    :param s: string to parse
-    """
-
-    result: list[float] = []
-
-    parse = re.split(r"\s|:", s)
-
-    try:
-        for part in parse:
-            m = re.match(r"^(\d+(\.\d+)?)/(\d+)$", part)
-            if m:
-                n = int(m.group(3))
-                result.extend([float(m.group(1)) / n] * n)
-                continue
-            m = re.match(r"^(\d+(\.\d+)?)\*(\d+)$", part)
-            if m:
-                n = int(m.group(3))
-                result.extend([float(m.group(1))] * n)
-                continue
-            result.append(float(part))
-    except ValueError:
-        raise argparse.ArgumentTypeError("Don't understand sections string")
-
-    if not result:
-        result.append(0.0)
-
-    return result
 
 
 def getDescriptions() -> dict:
@@ -2850,7 +2818,7 @@ class HandleEdge(Edge):
         if r > self.settings.height:
             r = self.settings.height
 
-        widths = argparseSections(self.settings.hole_width)
+        widths = argparseSections(self.settings.hole_width, group=1)
 
         if self.settings.outset:
             self.polyline(0, -180, self.settings.outset, 90)
