@@ -24,7 +24,6 @@ from boxes import gears
 from boxes.utils import argparseSections
 
 
-
 def getDescriptions() -> dict:
     d = {
         edge.char: edge.description
@@ -207,12 +206,12 @@ class Settings:
             cls.relative_params.items()
         ):
             # Handle choices
-            choices = None
             if isinstance(default, tuple):
-                choices = default
                 t = type(default[0])
                 for val in default:
-                    if not isinstance(val, t) or not isinstance(val, (bool, int, float, str)):
+                    if not isinstance(val, t) or not isinstance(
+                        val, (bool, int, float, str)
+                    ):
                         raise ValueError("Type not supported: %r", val)
                 default = default[0]
 
@@ -228,7 +227,6 @@ class Settings:
                 t = BoolArg()
             else:
                 t = type(default)
-
             group.append((f"{prefix}_{name}", default))
         return group
 
@@ -717,7 +715,6 @@ class GrippingEdge(BaseEdge):
         depth = self.settings.depth
         grooves = int(length // (depth * 2.0)) + 1
         depth = length / grooves / 2.0
-        o = 1 if self.settings.outset else -1
 
         if self.settings.outset:
             self.corner(-90)
@@ -726,7 +723,7 @@ class GrippingEdge(BaseEdge):
             self.edge(depth)
             self.corner(-180)
 
-        for groove in range(grooves):
+        for _ in range(grooves):
             self.corner(180, depth)
             self.corner(-180, 0)
 
@@ -1026,7 +1023,6 @@ class FingerJointEdge(BaseEdge, FingerJointBase):
 
     def __call__(self, length, bedBolts=None, bedBoltSettings=None, **kw):
         positive = self.positive
-        t = self.settings.thickness
 
         s, f = self.settings.space, self.settings.finger
         thickness = self.settings.thickness

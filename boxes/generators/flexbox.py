@@ -14,34 +14,81 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import math
+from typing import List
+from boxes.default_box import DefaultBoxes
+from boxes import edges
+from boxes.utils import edge_init
 
-import boxes
 
-
-class FlexBox(boxes.Boxes):
+class FlexBox(DefaultBoxes):
     """Box with living hinge and round corners"""
 
     ui_group = "FlexBox"
 
-    def __init__(self) -> None:
-        boxes.Boxes.__init__(self)
-        self.addSettingsArgs(boxes.edges.FingerJointSettings)
-        self.addSettingsArgs(boxes.edges.FlexSettings)
-        self.buildArgParser("x", "y", "h", "outside")
-        self.argparser.add_argument(
-            "--radius", action="store", type=float, default=15,
-            help="Radius of the latch in mm")
-        self.argparser.add_argument(
-            "--latchsize", action="store", type=float, default=8,
-            help="size of latch in multiples of thickness")
+    def __init__(
+        self,
+        x: float = 100,
+        y: float = 100,
+        h: float = 100,
+        sx: str | List = "50*3",
+        sy: str | List = "50*3",
+        sh: str | List = "50*3",
+        hi: float = 0,
+        hole_dD: str = "3.5:6.5",
+        bottom_edge: str = "h",
+        top_edge: str = "e",
+        outside: bool = True,
+        nema_mount: int = 23,
+        thickness: float = 3,
+        output: str = "box.svg",
+        format: str = "svg",
+        tabs: float = 0,
+        qr_code: bool = False,
+        debug: bool = False,
+        labels: bool = True,
+        reference: float = 100,
+        inner_corners: str = "loop",
+        burn: float = 0.1,
+        radius: float = 15,
+        latchsize: float = 8,
+    ) -> None:
+        super().__init__(
+            x,
+            y,
+            h,
+            sx,
+            sy,
+            sh,
+            hi,
+            hole_dD,
+            bottom_edge,
+            top_edge,
+            outside,
+            nema_mount,
+            thickness,
+            output,
+            format,
+            tabs,
+            qr_code,
+            debug,
+            labels,
+            reference,
+            inner_corners,
+            burn,
+        )
+        edge_init(self, [edges.FingerJointSettings, edges.FlexSettings])
+        # Radius of the latch in mm
+        self.radius = radius
+        # size of latch in multiples of thickness
+        self.latchsize = latchsize
 
     def flexBoxSide(self, x, y, r, callback=None, move=None):
         t = self.thickness
 
-        if self.move(x+2*t, y+t, move, True):
+        if self.move(x + 2 * t, y + t, move, True):
             return
 
-        self.moveTo(t+r, t)
+        self.moveTo(t + r, t)
 
         for i, l in zip(range(2), (x, y)):
             self.cc(callback, i)
@@ -57,20 +104,20 @@ class FlexBox(boxes.Boxes):
         self.edges["f"](y - 2 * r - self.latchsize)
         self.corner(90, r)
 
-        self.move(x+2*t, y+t, move)
+        self.move(x + 2 * t, y + t, move)
 
     def surroundingWall(self, move=None):
         x, y, h, r = self.x, self.y, self.h, self.radius
         t = self.thickness
         c4 = math.pi * r * 0.5
 
-        tw = 2*x + 2*y - 8*r + 4*c4
-        th = h + 2.5*t
+        tw = 2 * x + 2 * y - 8 * r + 4 * c4
+        th = h + 2.5 * t
 
         if self.move(tw, th, move, True):
             return
 
-        self.moveTo(0, 0.25*t)
+        self.moveTo(0, 0.25 * t)
 
         self.edges["F"](y - 2 * r - self.latchsize, False)
         if x - 2 * r < t:
@@ -104,7 +151,6 @@ class FlexBox(boxes.Boxes):
         self.move(tw, th, move)
 
     def render(self):
-
         if self.outside:
             self.x = self.adjustSize(self.x)
             self.y = self.adjustSize(self.y)
@@ -116,10 +162,6 @@ class FlexBox(boxes.Boxes):
         r = min(r, x / 2.0)
         self.radius = r = min(r, max(0, (y - self.latchsize) / 2.0))
 
-
         self.surroundingWall(move="up")
         self.flexBoxSide(self.x, self.y, self.radius, move="right")
         self.flexBoxSide(self.x, self.y, self.radius, move="mirror")
-
-
-

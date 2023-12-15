@@ -1,7 +1,7 @@
 import re
 import argparse
 
-from typing import List
+from typing import List, Dict
 
 
 def dist(dx: float, dy: float):
@@ -50,5 +50,14 @@ def argparseSections(s: str, group: int = 3):
 
 def edge_init(box, list_edges: List):
     for setting in list_edges:
-        for key, arg in setting.get_arguments():
-            setattr(box, key, arg)
+        if isinstance(setting, Dict):
+            setting_name = setting["setting"]
+            args = setting["args"]
+            prefix = setting_name.__name__[: -len("Settings")]
+            box.edgesettings[prefix] = {}
+            for key, arg in setting_name.get_arguments(**args):
+                box.edgesettings[prefix][key[len(prefix) + 1 :]] = arg
+                setattr(box, key, arg)
+        else:
+            for key, arg in setting.get_arguments():
+                setattr(box, key, arg)

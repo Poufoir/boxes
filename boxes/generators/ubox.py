@@ -13,8 +13,11 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from boxes import *
+from typing import List
+from boxes import edges
+from boxes.utils import edge_init
 from boxes.lids import _TopEdge, LidSettings
+import math
 
 
 class UBox(_TopEdge):
@@ -22,72 +25,116 @@ class UBox(_TopEdge):
 
     ui_group = "FlexBox"
 
-    def __init__(self) -> None:
-        Boxes.__init__(self)
+    def __init__(
+        self,
+        x: float = 100,
+        y: float = 100,
+        h: float = 100,
+        sx: str | List = "50*3",
+        sy: str | List = "50*3",
+        sh: str | List = "50*3",
+        hi: float = 0,
+        hole_dD: str = "3.5:6.5",
+        bottom_edge: str = "h",
+        top_edge: str = "e",
+        outside: bool = True,
+        nema_mount: int = 23,
+        thickness: float = 3,
+        output: str = "box.svg",
+        format: str = "svg",
+        tabs: float = 0,
+        qr_code: bool = False,
+        debug: bool = False,
+        labels: bool = True,
+        reference: float = 100,
+        inner_corners: str = "loop",
+        burn: float = 0.1,
+        radius: float = 30,
+        angle: float = 0,
+    ) -> None:
+        super().__init__(
+            x,
+            y,
+            h,
+            sx,
+            sy,
+            sh,
+            hi,
+            hole_dD,
+            bottom_edge,
+            top_edge,
+            outside,
+            nema_mount,
+            thickness,
+            output,
+            format,
+            tabs,
+            qr_code,
+            debug,
+            labels,
+            reference,
+            inner_corners,
+            burn,
+        )
         self.addTopEdgeSettings()
-        self.addSettingsArgs(edges.FlexSettings)
-        self.addSettingsArgs(LidSettings)
-        self.buildArgParser("top_edge", "x", "y", "h")
-        self.argparser.add_argument(
-            "--radius",  action="store", type=float, default=30.0,
-            help="radius of bottom corners")
-        self.angle = 0
+        edge_init(self, [edges.FlexSettings, LidSettings])
+        # radius of bottom corners
+        self.radius = radius
+        self.angle = angle
 
     def U(self, x, y, r, edge="e", move=None, label=""):
-
         e = self.edges.get(edge, edge)
 
         w = self.edges["f"].spacing()
-        tw = x+2*w
-        th = y+w+e.spacing()
+        tw = x + 2 * w
+        th = y + w + e.spacing()
         if self.move(tw, th, move, True, label=label):
             return
 
-        self.moveTo(w+r, w)
-        self.edges["f"](x-2*r)
+        self.moveTo(w + r, w)
+        self.edges["f"](x - 2 * r)
         self.corner(90, r)
-        self.edges["f"](y-r)
+        self.edges["f"](y - r)
         self.edgeCorner("f", e)
         e(x)
         self.edgeCorner(e, "f")
-        self.edges["f"](y-r)
+        self.edges["f"](y - r)
         self.corner(90, r)
 
         self.move(tw, th, move, label=label)
 
     def Uwall(self, x, y, h, r, edges="ee", move=None, label=""):
-
         e = [self.edges.get(edge, edge) for edge in edges]
 
         w = self.edges["F"].spacing()
-        cl = r*math.pi/2
+        cl = r * math.pi / 2
 
-        tw = 2*y + x - 4*(cl-r) + e[0].spacing() + e[1].spacing()
-        th = h + 2*w
+        tw = 2 * y + x - 4 * (cl - r) + e[0].spacing() + e[1].spacing()
+        th = h + 2 * w
         if self.move(tw, th, move, True, label=label):
             return
 
         self.moveTo(e[0].spacing())
 
         for nr, flex in enumerate("XE"):
-            self.edges["F"](y-r)
-            if x-2*r > 0.1 * self.thickness:
+            self.edges["F"](y - r)
+            if x - 2 * r > 0.1 * self.thickness:
                 self.edges[flex](cl, h=th)
-                self.edges["F"](x-2*r)
+                self.edges["F"](x - 2 * r)
                 self.edges[flex](cl, h=th)
             else:
-                self.edges[flex](2*cl+x-2*r, h=th)
-            self.edges["F"](y-r)
+                self.edges[flex](2 * cl + x - 2 * r, h=th)
+            self.edges["F"](y - r)
             self.edgeCorner("F", e[nr])
             e[nr](h)
             self.edgeCorner(e[nr], "F")
-        
+
         self.move(tw, th, move, label=label)
 
     def render(self):
         x, y, h, r = self.x, self.y, self.h, self.radius
 
-        self.radius = r = min(r, x/2.0, y)
+        self.radius = r = min(r, x / 2.0, y)
 
         _ = self.translations.gettext
         t1, t2, t3, t4 = self.topEdges(self.top_edge)
@@ -99,5 +146,3 @@ class UBox(_TopEdge):
 
         self.drawLid(x, h, self.top_edge)
         self.lid(x, h, self.top_edge)
-
-
