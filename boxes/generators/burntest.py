@@ -13,10 +13,16 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from boxes import *
+from typing import List
+from boxes.default_box import DefaultBoxes
+from boxes import edges
+from boxes.utils import edge_init
+from boxes.Color import Color
 
-class BurnTest(Boxes):
+
+class BurnTest(DefaultBoxes):
     """Test different burn values"""
+
     description = """This generator will make shapes that you can use to select
 optimal value for burn parameter for other generators. After burning try to
 attach sides with the same value and use best fitting one on real projects.
@@ -33,41 +39,99 @@ See also LBeam that can serve as compact BurnTest and FlexTest for testing flex 
 
     ui_group = "Part"
 
-    def __init__(self) -> None:
-        Boxes.__init__(self)
+    def __init__(
+        self,
+        x: float = 100,
+        y: float = 100,
+        h: float = 100,
+        sx: str | List = "50*3",
+        sy: str | List = "50*3",
+        sh: str | List = "50*3",
+        hi: float = 0,
+        hole_dD: str = "3.5:6.5",
+        bottom_edge: str = "h",
+        top_edge: str = "e",
+        outside: bool = True,
+        nema_mount: int = 23,
+        thickness: float = 3,
+        output: str = "box.svg",
+        format: str = "svg",
+        tabs: float = 0,
+        qr_code: bool = False,
+        debug: bool = False,
+        labels: bool = True,
+        reference: float = 100,
+        inner_corners: str = "loop",
+        burn: float = 0.1,
+        step: float = 0.01,
+        pairs: int = 2,
+    ) -> None:
+        super().__init__(
+            x,
+            y,
+            h,
+            sx,
+            sy,
+            sh,
+            hi,
+            hole_dD,
+            bottom_edge,
+            top_edge,
+            outside,
+            nema_mount,
+            thickness,
+            output,
+            format,
+            tabs,
+            qr_code,
+            debug,
+            labels,
+            reference,
+            inner_corners,
+            burn,
+        )
 
-        self.addSettingsArgs(edges.FingerJointSettings)
-        self.buildArgParser(x=100)
-        self.argparser.add_argument(
-            "--step",  action="store", type=float, default=0.01,
-            help="increases in burn value between the sides")
-        self.argparser.add_argument(
-            "--pairs",  action="store", type=int, default=2,
-            help="number of pairs (each testing four burn values)")
-
+        edge_init(self, [edges.FingerJointSettings])
+        # increases in burn value between the sides
+        self.step = step
+        # number of pairs (each testing four burn values)
+        self.pairs = pairs
 
     def render(self):
         x, s = self.x, self.step
         t = self.thickness
-        
+
         fsize = 12.5 * self.x / 100 if self.x < 81 else 10
 
         self.moveTo(t, t)
 
         for cnt in range(self.pairs):
-            
             for i in range(4):
-                self.text("%.3fmm" % self.burn, x/2, t, fontsize = fsize, align="center", color=Color.ETCHING)
+                self.text(
+                    "%.3fmm" % self.burn,
+                    x / 2,
+                    t,
+                    fontsize=fsize,
+                    align="center",
+                    color=Color.ETCHING,
+                )
                 self.edges["f"](x)
                 self.corner(90)
                 self.burn += s
-                
-            self.burn -= 4*s
 
-            self.moveTo(x+2*t+self.spacing, -t)
+            self.burn -= 4 * s
+
+            self.moveTo(x + 2 * t + self.spacing, -t)
             for i in range(4):
-                self.text("%.3fmm" % self.burn, x/2, t, fontsize = fsize, align="center", color=Color.ETCHING)
+                self.text(
+                    "%.3fmm" % self.burn,
+                    x / 2,
+                    t,
+                    fontsize=fsize,
+                    align="center",
+                    color=Color.ETCHING,
+                )
                 self.edges["F"](x)
                 self.polyline(t, 90, t)
                 self.burn += s
-            self.moveTo(x+2*t+self.spacing, t)
+            self.moveTo(x + 2 * t + self.spacing, t)

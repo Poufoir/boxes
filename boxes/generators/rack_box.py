@@ -17,9 +17,11 @@ from __future__ import annotations
 
 import math
 from functools import partial
-from typing import Optional
+from typing import List
 
-from boxes import Boxes, edges, boolarg, lids
+from boxes import edges, lids
+from boxes.default_box import DefaultBoxes
+from boxes.edges import Settings
 
 
 class NotchSettings(edges.Settings):
@@ -73,72 +75,100 @@ class DividerSettings(edges.Settings):
     }
 
 
-class DividerTray(Boxes):
+class DividerTray(DefaultBoxes):
     """Divider tray - rows and dividers"""
 
     description = """
-Adding '0:' at the start of the sy parameter adds a slot at the very back. Adding ':0' at the end of sy adds a slot meeting the bottom at the very front. This is especially useful if slot angle is set above zero.
+    Adding '0:' at the start of the sy parameter adds a slot at the very back. Adding ':0' at the end of sy adds a slot meeting the bottom at the very front. This is especially useful if slot angle is set above zero.
 
-There are 4 different sets of dividers rendered:
+    There are 4 different sets of dividers rendered:
 
-* With asymmetric tabs so the tabs fit on top of each other
-* With tabs of half wall thickness that can go side by side
-* With tabs of a full wall thickness
-* One single divider spanning across all columns
+    * With asymmetric tabs so the tabs fit on top of each other
+    * With tabs of half wall thickness that can go side by side
+    * With tabs of a full wall thickness
+    * One single divider spanning across all columns
 
-You will likely need to cut each of the dividers you want multiple times.
-"""
+    You will likely need to cut each of the dividers you want multiple times.
+    """
 
     ui_group = "Tray"
 
     def __init__(
         self,
-        sx: Optional[str] = None,
-        sy: Optional[str] = None,
-        h: Optional[str] = None,
-        outside: Optional[str] = None,
+        x: float = 100,
+        y: float = 100,
+        h: float = 100,
+        sx: str | List = "50*3",
+        sy: str | List = "50*3",
+        sh: str | List = "50*3",
+        hi: float = 0,
+        hole_dD: str = "3.5:6.5",
+        bottom_edge: str = "h",
+        top_edge: str = "e",
+        outside: bool = True,
+        nema_mount: int = 23,
+        thickness: float = 3,
+        output: str = "box.svg",
+        format: str = "svg",
+        tabs: float = 0,
+        qr_code: bool = False,
+        debug: bool = False,
+        labels: bool = True,
+        reference: float = 100,
+        inner_corners: str = "loop",
+        burn: float = 0.1,
+        notches_in_wall: bool = True,
         left_wall: bool = True,
         right_wall: bool = True,
-        bottom_wall: bool = False,
+        bottom: bool = False,
+        handle: bool = False,
     ) -> None:
-        Boxes.__init__(self)
-        self.addSettingsArgs(edges.FingerJointSettings)
-        self.addSettingsArgs(edges.HandleEdgeSettings)
-        self.addSettingsArgs(lids.LidSettings)
-        self.buildArgParser(sx=sx, sy=sy, h=h, outside=outside)
-        self.addSettingsArgs(SlotSettings)
-        self.addSettingsArgs(NotchSettings)
-        self.addSettingsArgs(DividerSettings)
-        self.argparser.add_argument(
-            "--notches_in_wall",
-            type=boolarg,
-            default=True,
-            help="generate the same notches on the walls that are on the dividers",
+        super().__init__(
+            x,
+            y,
+            h,
+            sx,
+            sy,
+            sh,
+            hi,
+            hole_dD,
+            bottom_edge,
+            top_edge,
+            outside,
+            nema_mount,
+            thickness,
+            output,
+            format,
+            tabs,
+            qr_code,
+            debug,
+            labels,
+            reference,
+            inner_corners,
+            burn,
         )
-        self.argparser.add_argument(
-            "--left_wall",
-            type=boolarg,
-            default=left_wall,
-            help="generate wall on the left side",
-        )
-        self.argparser.add_argument(
-            "--right_wall",
-            type=boolarg,
-            default=right_wall,
-            help="generate wall on the right side",
-        )
-        self.argparser.add_argument(
-            "--bottom",
-            type=boolarg,
-            default=bottom_wall,
-            help="generate wall on the bottom",
-        )
-        self.argparser.add_argument(
-            "--handle",
-            type=boolarg,
-            default=False,
-            help="add handle to the bottom",
-        )
+
+        self.notches_in_wall = notches_in_wall
+        self.left_wall = left_wall
+        self.right_wall = right_wall
+        self.bottom = bottom
+        self.handle = handle
+        self.sx = sx
+        self.sy = sy
+        self.h = h
+        self.outside = outside
+
+        setting: Settings
+        for setting in [
+            edges.FingerJointSettings,
+            edges.HandleEdgeSettings,
+            lids.LidSettings,
+            SlotSettings,
+            NotchSettings,
+            DividerSettings,
+        ]:
+            for key, arg in setting.get_arguments():
+                setattr(self, key, arg)
 
     def render(self):
         side_walls_number = len(self.sx) - 1 + sum([self.left_wall, self.right_wall])

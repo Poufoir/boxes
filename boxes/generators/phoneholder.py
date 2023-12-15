@@ -15,11 +15,15 @@
 
 import math
 from functools import partial
+from typing import List, Union
 
 from boxes import Boxes, edges
+from boxes.default_box import DefaultBoxes
+from boxes import edges
+from boxes.utils import edge_init
 
 
-class PhoneHolder(Boxes):
+class PhoneHolder(DefaultBoxes):
     """
     Smartphone desk holder
     """
@@ -34,60 +38,78 @@ class PhoneHolder(Boxes):
     Default values are currently based on Galaxy S7.
 """
 
-    def __init__(self) -> None:
-        Boxes.__init__(self)
-        self.argparser.add_argument(
-            "--phone_height",
-            type=float,
-            default=142,
-            help="Height of the phone.",
+    def __init__(
+        self,
+        x: float = 100,
+        y: float = 100,
+        h: float = 100,
+        sx: str | List = "50*3",
+        sy: str | List = "50*3",
+        sh: str | List = "50*3",
+        hi: float = 0,
+        hole_dD: str = "3.5:6.5",
+        bottom_edge: str = "h",
+        top_edge: str = "e",
+        outside: bool = True,
+        nema_mount: int = 23,
+        thickness: float = 3,
+        output: str = "box.svg",
+        format: str = "svg",
+        tabs: float = 0,
+        qr_code: bool = False,
+        debug: bool = False,
+        labels: bool = True,
+        reference: float = 100,
+        inner_corners: str = "loop",
+        burn: float = 0.1,
+        phone_height: float = 142,
+        phone_width: float = 73,
+        phone_depth: float = 25,
+        angle: float = 25,
+        bottom_margin: float = 30,
+        tab_size: float = 76,
+        bottom_support_spacing: float = 16,
+    ) -> None:
+        super().__init__(
+            x,
+            y,
+            h,
+            sx,
+            sy,
+            sh,
+            hi,
+            hole_dD,
+            bottom_edge,
+            top_edge,
+            outside,
+            nema_mount,
+            thickness,
+            output,
+            format,
+            tabs,
+            qr_code,
+            debug,
+            labels,
+            reference,
+            inner_corners,
+            burn,
         )
-        self.argparser.add_argument(
-            "--phone_width",
-            type=float,
-            default=73,
-            help="Width of the phone.",
-        )
-        self.argparser.add_argument(
-            "--phone_depth",
-            type=float,
-            default=11,
-            help=(
-                "Depth of the phone. Used by the bottom support holding the "
-                "phone, and the side tabs depth as well. Should be at least "
-                "your material thickness for assembly reasons."
-            ),
-        )
-        self.argparser.add_argument(
-            "--angle",
-            type=float,
-            default=25,
-            help="angle at which the phone stands, in degrees. 0° is vertical.",
-        )
-        self.argparser.add_argument(
-            "--bottom_margin",
-            type=float,
-            default=30,
-            help="Height of the support below the phone",
-        )
-        self.argparser.add_argument(
-            "--tab_size",
-            type=float,
-            default=76,
-            help="Length of the tabs holding the phone",
-        )
-        self.argparser.add_argument(
-            "--bottom_support_spacing",
-            type=float,
-            default=16,
-            help=(
-                "Spacing between the two bottom support. Choose a value big "
-                "enough for the charging cable, without getting in the way of "
-                "other ports."
-            ),
-        )
-
-        self.addSettingsArgs(edges.FingerJointSettings)
+        self.phone_height = phone_height
+        self.phone_width = phone_width
+        # Depth of the phone. Used by the bottom support holding the
+        # phone, and the side tabs depth as well. Should be at least
+        # your material thickness for assembly reasons.
+        self.phone_depth = phone_depth
+        self.angle = angle
+        # Height of the support below the phone
+        self.bottom_margin = bottom_margin
+        # Length of the tabs holding the phone
+        self.tab_size = tab_size
+        # Spacing between the two bottom support. Choose a value big
+        # enough for the charging cable, without getting in the way of
+        # other ports.
+        self.bottom_support_spacing = bottom_support_spacing
+        edge_init(self, [edges.FingerJointSettings])
 
     def render(self):
         self.h = self.phone_height + self.bottom_margin

@@ -13,10 +13,13 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from boxes import *
+from typing import List
+from boxes.default_box import DefaultBoxes
+from boxes import edges
+from boxes.utils import edge_init
 
 
-class BasedBox(Boxes):
+class BasedBox(DefaultBoxes):
     """Fully closed box on a base"""
 
     ui_group = "Box"
@@ -29,21 +32,64 @@ plate. The width of the "brim" can also be adjusted with the **edge_width**
 See ClosedBox for variant without a base.
 """
 
-    def __init__(self) -> None:
-        Boxes.__init__(self)
-        self.addSettingsArgs(edges.FingerJointSettings)
-        self.buildArgParser("x", "y", "h", "outside")
+    def __init__(
+        self,
+        x: float = 100,
+        y: float = 100,
+        h: float = 100,
+        sx: str | List = "50*3",
+        sy: str | List = "50*3",
+        sh: str | List = "50*3",
+        hi: float = 0,
+        hole_dD: str = "3.5:6.5",
+        bottom_edge: str = "h",
+        top_edge: str = "e",
+        outside: bool = True,
+        nema_mount: int = 23,
+        thickness: float = 3,
+        output: str = "box.svg",
+        format: str = "svg",
+        tabs: float = 0,
+        qr_code: bool = False,
+        debug: bool = False,
+        labels: bool = True,
+        reference: float = 100,
+        inner_corners: str = "loop",
+        burn: float = 0.1,
+    ) -> None:
+        super().__init__(
+            x,
+            y,
+            h,
+            sx,
+            sy,
+            sh,
+            hi,
+            hole_dD,
+            bottom_edge,
+            top_edge,
+            outside,
+            nema_mount,
+            thickness,
+            output,
+            format,
+            tabs,
+            qr_code,
+            debug,
+            labels,
+            reference,
+            inner_corners,
+            burn,
+        )
+        edge_init(self, [edges.FingerJointSettings])
 
     def render(self):
-
         x, y, h = self.x, self.y, self.h
 
         if self.outside:
             x = self.adjustSize(x)
             y = self.adjustSize(y)
             h = self.adjustSize(h)
-
-        t = self.thickness
 
         self.rectangularWall(x, h, "fFFF", move="right", label="Wall 1")
         self.rectangularWall(y, h, "ffFf", move="up", label="Wall 2")
@@ -52,6 +98,3 @@ See ClosedBox for variant without a base.
 
         self.rectangularWall(x, y, "ffff", move="right", label="Top")
         self.rectangularWall(x, y, "hhhh", label="Base")
-
-
-

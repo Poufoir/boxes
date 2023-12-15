@@ -15,41 +15,28 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from __future__ import annotations
 
-import argparse
 import copy
 import math
 import random
-import re
 import sys
 import qrcode
 import gettext
 
 from functools import wraps
-from shlex import quote
-from typing import Any
+from typing import Any, Callable
 from argparse import ArgumentParser
 from contextlib import contextmanager
 from xml.sax.saxutils import quoteattr
 from shapely.geometry import Polygon, Point, LineString
 from shapely.ops import split
-from typing import Callable
 
 from boxes import edges, formats, gears, parts, pulley, svgutil
 from boxes.Color import Color
 from boxes.vectors import kerf
 from boxes.qrcode_factory import BoxesQrCodeFactory
+from boxes.utils import dist, argparseSections
 
 ### Helpers
-
-
-def dist(dx: float, dy: float):
-    """
-    Return distance
-
-    :param dx: delta x
-    :param dy: delay y
-    """
-    return (dx**2 + dy**2) ** 0.5
 
 
 def restore(func: Callable) -> Callable:
@@ -149,39 +136,6 @@ class NutHole:
 ##############################################################################
 ### Argument types
 ##############################################################################
-
-
-def argparseSections(s:str):
-    """
-    Parse sections parameter
-
-    :param s: string to parse
-    """
-
-    result = []
-
-    s = re.split(r"\s|:", s)
-
-    try:
-        for part in s:
-            m = re.match(r"^(\d+(\.\d+)?)/(\d+)$", part)
-            if m:
-                n = int(m.group(3))
-                result.extend([float(m.group(1)) / n] * n)
-                continue
-            m = re.match(r"^(\d+(\.\d+)?)\*(\d+)$", part)
-            if m:
-                n = int(m.group(3))
-                result.extend([float(m.group(1))] * n)
-                continue
-            result.append(float(part))
-    except ValueError:
-        raise argparse.ArgumentTypeError("Don't understand sections string")
-
-    if not result:
-        result.append(0.0)
-
-    return result
 
 
 class ArgparseEdgeType:
@@ -308,13 +262,36 @@ class fillHolesSettings(edges.Settings):
 class Boxes:
     """Main class -- Generator should subclass this"""
 
-    webinterface:bool = True
-    ui_group:str = "Misc"
-    UI:str = ""
+    webinterface: bool = True
+    ui_group: str = "Misc"
+    UI: str = ""
 
     description: str = ""  # Markdown syntax is supported
 
-    def __init__(self, thickness:float = 3, output:str = "box.svg") -> None:
+    def __init__(
+        self,
+        thickness: float = 3,
+        output: str = "box.svg",
+        format: str = "svg",
+        tabs: float = 0.0,
+        qr_code: bool = False,
+        debug: bool = False,
+        labels: bool = True,
+        reference: float = 100,
+        inner_corners: str = "loop",
+        burn: float = 0.1,
+    ) -> None:
+        self.thickness = thickness
+        self.output = output
+        self.format = format
+        self.tabs = tabs
+        self.qr_code = qr_code
+        self.debug = debug
+        self.labels = labels
+        self.reference = reference
+        self.inner_corners = inner_corners
+        self.burn = burn
+
         self.formats = formats.Formats()
         self.ctx = None
         description: str = self.__doc__ or ""
@@ -323,7 +300,6 @@ class Boxes:
         self.argparser = ArgumentParser(description=description)
         self.edgesettings: dict[Any, Any] = {}
         self.inkscapefile = None
-        self.non_default_args: dict[Any, Any] = {}
         self.translations = gettext.NullTranslations()
 
         self.metadata = {
@@ -341,79 +317,7 @@ class Boxes:
         self.thickness: float = thickness
 
         self.argparser._action_groups[1].title = self.__class__.__name__ + " Settings"
-        defaultgroup = self.argparser.add_argument_group("Default Settings")
-        defaultgroup.add_argument(
-            "--thickness",
-            action="store",
-            type=float,
-            default=thickness,
-            help="thickness of the material (in mm) [\U0001F6C8](https://florianfesti.github.io/boxes/html/usermanual.html#thickness)",
-        )
-        defaultgroup.add_argument(
-            "--output",
-            action="store",
-            type=str,
-            default=output,
-            help="name of resulting file",
-        )
-        defaultgroup.add_argument(
-            "--format",
-            action="store",
-            type=str,
-            default="svg",
-            choices=self.formats.getFormats(),
-            help="format of resulting file [\U0001F6C8](https://florianfesti.github.io/boxes/html/usermanual.html#format)",
-        )
-        defaultgroup.add_argument(
-            "--tabs",
-            action="store",
-            type=float,
-            default=0.0,
-            help="width of tabs holding the parts in place (in mm)(not supported everywhere) [\U0001F6C8](https://florianfesti.github.io/boxes/html/usermanual.html#tabs)",
-        )
-        defaultgroup.add_argument(
-            "--qr_code",
-            action="store",
-            type=boolarg,
-            default=False,
-            help="Add a QR Code with link or command line to the generated output",
-        )
-        defaultgroup.add_argument(
-            "--debug",
-            action="store",
-            type=boolarg,
-            default=False,
-            help="print surrounding boxes for some structures [\U0001F6C8](https://florianfesti.github.io/boxes/html/usermanual.html#debug)",
-        )
-        defaultgroup.add_argument(
-            "--labels",
-            action="store",
-            type=boolarg,
-            default=True,
-            help="label the parts (where available)",
-        )
-        defaultgroup.add_argument(
-            "--reference",
-            action="store",
-            type=float,
-            default=100,
-            help="print reference rectangle with given length (in mm)(zero to disable) [\U0001F6C8](https://florianfesti.github.io/boxes/html/usermanual.html#reference)",
-        )
-        defaultgroup.add_argument(
-            "--inner_corners",
-            action="store",
-            type=str,
-            default="loop",
-            choices=["loop", "corner", "backarc"],
-            help="style for inner corners [\U0001F6C8](https://florianfesti.github.io/boxes/html/usermanual.html#inner-corners)",
-        )
-        defaultgroup.add_argument(
-            "--burn",
-            action="store",
-            type=float,
-            default=0.1,
-            help="burn correction (in mm)(bigger values for tighter fit) [\U0001F6C8](https://florianfesti.github.io/boxes/html/usermanual.html#burn)",
-        )
+        self.argparser.add_argument_group("Default Settings")
 
     @contextmanager
     def saved_context(self):
@@ -474,23 +378,19 @@ class Boxes:
             self.move(self.reference, 10, "up", before=True)
             self.ctx.rectangle(0, 0, self.reference, 10)
             if self.reference < 80:
-                self.text(
-                    f"{self.reference:.2f}mm, burn:{self.burn:.2f}mm",
-                    self.reference + 5,
-                    5,
-                    fontsize=8,
-                    align="middle left",
-                    color=Color.ANNOTATIONS,
-                )
+                x_param = self.reference + 5
+                align_param = "middle left"
             else:
-                self.text(
-                    f"{self.reference:.2f}mm, burn:{self.burn:.2f}mm",
-                    self.reference / 2.0,
-                    5,
-                    fontsize=8,
-                    align="middle center",
-                    color=Color.ANNOTATIONS,
-                )
+                x_param = self.reference / 2.0
+                align_param = "middle center"
+            self.text(
+                f"{self.reference:.2f}mm, burn:{self.burn:.2f}mm",
+                x_param,
+                5,
+                fontsize=8,
+                align=align_param,
+                color=Color.ANNOTATIONS,
+            )
             self.move(self.reference, 10, "up")
             if self.qr_code:
                 self.renderQrCode()
@@ -664,17 +564,7 @@ class Boxes:
             del args[-1]
         args = [a for a in args if not a.startswith("--tab=")]
 
-        def cliquote(s):
-            s = s.replace("\r", "")
-            s = s.replace("\n", "\\n")
-            return quote(s)
-
-        self.metadata["cli"] = (
-            "boxes "
-            + self.__class__.__name__
-            + " "
-            + " ".join(cliquote(arg) for arg in args)
-        )
+        non_default_args: dict[Any, Any] = {}
 
         for key, value in vars(self.argparser.parse_args(args=args)).items():
             default = self.argparser.get_default(key)
@@ -686,23 +576,12 @@ class Boxes:
                     continue
             setattr(self, key, value)
             if value != default:
-                self.non_default_args[key] = value
+                non_default_args[key] = value
 
         # Change file ending to format if not given explicitly
         format = getattr(self, "format", "svg")
         if getattr(self, "output", None) == "box.svg":
             self.output = "box." + format.split("_")[0]
-
-        self.metadata["cli_short"] = (
-            "boxes "
-            + self.__class__.__name__
-            + " "
-            + " ".join(
-                cliquote(arg)
-                for arg in args
-                if (arg.split("=")[0][2:] in self.non_default_args)
-            )
-        )
 
     def addPart(self, part, name=None):
         """
@@ -2223,33 +2102,6 @@ class Boxes:
                                 self.corner(-180, max_radius)
                                 self.edge(x_end - x_start)
                                 self.corner(-180, max_radius)
-
-                            if self.debug and False:  # enable to debug short lines
-                                self.set_source_color(Color.ANNOTATIONS)
-                                with self.saved_context():
-                                    self.moveTo(x_start, y_start, 0)
-                                    self.edge(x_end - x_start)
-
-                                s = (
-                                    "short - y: "
-                                    + str(round(y, 1))
-                                    + " xs: "
-                                    + str(round(x_start, 1))
-                                    + " xe: "
-                                    + str(round(x_end, 1))
-                                    + " l: "
-                                    + str(round(line_this.length, 1))
-                                    + " max: "
-                                    + str(round(segment_length[segment_max], 1))
-                                )
-                                with self.saved_context():
-                                    self.text(
-                                        s,
-                                        x_start,
-                                        y_start,
-                                        fontsize=2,
-                                        color=Color.ANNOTATIONS,
-                                    )
 
                             segment_max = 1
                             # short segment shall be skipped if a short segment shall start the line

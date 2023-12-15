@@ -13,37 +13,83 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from boxes import *
+from typing import List
+from boxes.default_box import DefaultBoxes
+import math
 
 
-class BottleTag(Boxes):
+class BottleTag(DefaultBoxes):
     """Paper slip over bottle tag"""
 
     ui_group = "Misc"  # see ./__init__.py for names
 
-    def __init__(self) -> None:
-        Boxes.__init__(self)
-
-        self.buildArgParser()
-        # Add non default cli params if needed (see argparse std lib)
-        self.argparser.add_argument(
-            "--width", action="store", type=float, default=72,
-            help="width of neck tag")
-        self.argparser.add_argument(
-            "--height", action="store", type=float, default=98,
-            help="height of neck tag")
-        self.argparser.add_argument(
-            "--min_diameter", action="store", type=float, default=24,
-            help="inner diameter of bottle neck hole")
-        self.argparser.add_argument(
-            "--max_diameter", action="store", type=float, default=50,
-            help="outer diameter of bottle neck hole")
-        self.argparser.add_argument(
-            "--radius", action="store", type=float, default=15,
-            help="corner radius of bottom tag")
-        self.argparser.add_argument(
-            "--segment_width", action="store", type=int, default=3,
-            help="inner segment width")
+    def __init__(
+        self,
+        x: float = 100,
+        y: float = 100,
+        h: float = 100,
+        sx: str | List = "50*3",
+        sy: str | List = "50*3",
+        sh: str | List = "50*3",
+        hi: float = 0,
+        hole_dD: str = "3.5:6.5",
+        bottom_edge: str = "h",
+        top_edge: str = "e",
+        outside: bool = True,
+        nema_mount: int = 23,
+        thickness: float = 3,
+        output: str = "box.svg",
+        format: str = "svg",
+        tabs: float = 0,
+        qr_code: bool = False,
+        debug: bool = False,
+        labels: bool = True,
+        reference: float = 100,
+        inner_corners: str = "loop",
+        burn: float = 0.1,
+        width: float = 70,
+        height: float = 98,
+        min_diameter: float = 24,
+        max_diameter: float = 50,
+        radius: float = 15,
+        segment_width: int = 3,
+    ) -> None:
+        super().__init__(
+            x,
+            y,
+            h,
+            sx,
+            sy,
+            sh,
+            hi,
+            hole_dD,
+            bottom_edge,
+            top_edge,
+            outside,
+            nema_mount,
+            thickness,
+            output,
+            format,
+            tabs,
+            qr_code,
+            debug,
+            labels,
+            reference,
+            inner_corners,
+            burn,
+        )
+        # width of neck tag
+        self.width = width
+        # height of neck tag
+        self.height = height
+        # inner diameter of bottle neck hole
+        self.min_diameter = min_diameter
+        # outer diameter of bottle neck hole
+        self.max_diameter = max_diameter
+        # corner radius of bottom tag
+        self.radius = radius
+        # inner segment width
+        self.segment_width = segment_width
 
     def render(self):
         # adjust to the variables you want in the local scope
@@ -85,4 +131,3 @@ class BottleTag(Boxes):
                 with self.saved_context():
                     self.moveTo(0, 0, -90)
                     self.edge(0.5)
-
