@@ -70,7 +70,7 @@ class DefaultBoxes(Boxes):
             default = getattr(self, key)
             if isinstance(default, str):
                 result = argparseSections(default)
-                setattr(self, key, result[0])
+                setattr(self, key, result)
         for key, arg in {"bottom_edge": "Fhse", "top_edge": "efFhcESŠikvLtGyY"}.items():
             default = getattr(self, key)
             if isinstance(getattr(self, key), str):
