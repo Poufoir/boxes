@@ -15,11 +15,10 @@
 
 import math
 from functools import partial
-from typing import List, Union
+from typing import List
 
-from boxes import Boxes, edges
-from boxes.default_box import DefaultBoxes
 from boxes import edges
+from boxes.default_box import DefaultBoxes
 from boxes.utils import edge_init
 
 
@@ -307,9 +306,9 @@ class TabbedEdge(edges.BaseEdge):
 
         self.edges["f"](tab_start)
 
-        self.ctx.save()
+        self.context.save()
         self.fingerHolesAt(0, -self.thickness / 2, self.tab_length, 0)
-        self.ctx.restore()
+        self.context.restore()
 
         self.polyline(
             0,

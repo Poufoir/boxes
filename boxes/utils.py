@@ -1,7 +1,10 @@
 import re
 import argparse
 
-from typing import List, Dict
+from typing import List, Dict, Callable
+from functools import wraps
+
+from boxes.Color import Color
 
 
 def dist(dx: float, dy: float):
@@ -61,3 +64,49 @@ def edge_init(box, list_edges: List):
         else:
             for key, arg in setting.get_arguments():
                 setattr(box, key, arg)
+
+
+def restore(func: Callable) -> Callable:
+    """Wrapper: Restore coordinates after function
+
+    Args:
+        func (Callable): Function to wrap
+
+    Returns:
+        Callable: function wrapped
+    """
+
+    @wraps(func)
+    def f(self, *args, **kw):
+        with self.saved_context():
+            pt = self.context.get_current_point()
+            func(self, *args, **kw)
+        self.context.move_to(*pt)
+
+    return f
+
+
+def holeCol(func: Callable):
+    """Wrapper: color holes differently
+
+    Args:
+        func (Callable): function to wrap
+
+    Returns:
+        Callable: function wrapped
+    """
+
+    @wraps(func)
+    def f(self, *args, **kw):
+        if "color" in kw:
+            color = kw.pop("color")
+        else:
+            color = Color.INNER_CUT
+
+        self.context.stroke()
+        with self.saved_context():
+            self.set_source_color(color)
+            func(self, *args, **kw)
+            self.context.stroke()
+
+    return f

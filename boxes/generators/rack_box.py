@@ -200,7 +200,7 @@ class DividerTray(DefaultBoxes):
             side_wall_target_length = sum(self.sy) - 2 * self.thickness
             slot_descriptions.adjust_to_target_length(side_wall_target_length)
 
-        self.ctx.save()
+        self.context.save()
 
         # Facing walls (outer) with finger holes to support side walls
         facing_wall_length = sum(self.sx) + self.thickness * (len(self.sx) - 1)
@@ -254,7 +254,7 @@ class DividerTray(DefaultBoxes):
         self.lid(facing_wall_length, side_wall_length)
 
         # Switch to right side of the file
-        self.ctx.restore()
+        self.context.restore()
         self.rectangularWall(
             max(facing_wall_length, side_wall_length),
             self.h,
@@ -685,7 +685,7 @@ class DividerSlotsEdge(edges.BaseEdge):
         self.descriptions = descriptions
 
     def __call__(self, length, **kw):
-        self.ctx.save()
+        self.context.save()
 
         for description in self.descriptions:
             if isinstance(description, SlotDescription):
@@ -695,14 +695,14 @@ class DividerSlotsEdge(edges.BaseEdge):
 
         # rounding errors might accumulate :
         # restore context and redo the move straight
-        self.ctx.restore()
+        self.context.restore()
         self.moveTo(length)
 
     def do_straight_edge(self, straight_edge):
         self.edge(straight_edge.tracing_length())
 
     def do_slot(self, slot):
-        self.ctx.save()
+        self.context.save()
 
         self.polyline(
             0,
@@ -717,5 +717,5 @@ class DividerSlotsEdge(edges.BaseEdge):
 
         # rounding errors might accumulate :
         # restore context and redo the move straight
-        self.ctx.restore()
+        self.context.restore()
         self.moveTo(slot.tracing_length())

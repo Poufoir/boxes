@@ -16,6 +16,7 @@
 from boxes import *
 from boxes.lids import _TopEdge, LidSettings
 
+
 class TypeTray(_TopEdge):
     """Type tray - allows only continuous walls"""
 
@@ -23,25 +24,46 @@ class TypeTray(_TopEdge):
 
     def __init__(self) -> None:
         Boxes.__init__(self)
-        self.addTopEdgeSettings(fingerjoint={"surroundingspaces": 0.5},
-                                roundedtriangle={"outset" : 1})
+        self.addTopEdgeSettings(
+            fingerjoint={"surroundingspaces": 0.5}, roundedtriangle={"outset": 1}
+        )
         self.addSettingsArgs(LidSettings)
-        self.buildArgParser("sx", "sy", "h", "hi", "outside", "bottom_edge",
-                            "top_edge")
+        self.buildArgParser("sx", "sy", "h", "hi", "outside", "bottom_edge", "top_edge")
         self.argparser.add_argument(
-            "--back_height",  action="store", type=float, default=0.0,
-            help="additional height of the back wall - e top edge only")
+            "--back_height",
+            action="store",
+            type=float,
+            default=0.0,
+            help="additional height of the back wall - e top edge only",
+        )
         self.argparser.add_argument(
-            "--radius",  action="store", type=float, default=0.0,
-            help="radius for strengthening side walls with back_height")
+            "--radius",
+            action="store",
+            type=float,
+            default=0.0,
+            help="radius for strengthening side walls with back_height",
+        )
         self.argparser.add_argument(
-            "--gripheight", action="store", type=float, default=30,
-            dest="gh", help="height of the grip hole in mm")
+            "--gripheight",
+            action="store",
+            type=float,
+            default=30,
+            dest="gh",
+            help="height of the grip hole in mm",
+        )
         self.argparser.add_argument(
-            "--gripwidth", action="store", type=float, default=70,
-            dest="gw", help="width of th grip hole in mm (zero for no hole)")
+            "--gripwidth",
+            action="store",
+            type=float,
+            default=70,
+            dest="gw",
+            help="width of th grip hole in mm (zero for no hole)",
+        )
         self.argparser.add_argument(
-            "--handle", type=boolarg, default=False, help="add handle to the bottom (changes bottom edge in the front)",
+            "--handle",
+            type=boolarg,
+            default=False,
+            help="add handle to the bottom (changes bottom edge in the front)",
         )
 
     def xSlots(self):
@@ -106,59 +128,100 @@ class TypeTray(_TopEdge):
 
         # x sides
 
-        self.ctx.save()
+        self.context.save()
 
         # outer walls - front/back
         if bh:
-            self.rectangularWall(x, h+bh, [b, "f", tb, "f"],
-                                 callback=[self.xHoles],
-                                 ignore_widths=[],
-                                 move="up", label="back")
-            self.rectangularWall(x, h, ["f" if self.handle else b, "f", tf, "f"],
-                                 callback=[self.mirrorX(self.xHoles, x),
-                                           None, self.gripHole],
-                                 move="up", label="front")
+            self.rectangularWall(
+                x,
+                h + bh,
+                [b, "f", tb, "f"],
+                callback=[self.xHoles],
+                ignore_widths=[],
+                move="up",
+                label="back",
+            )
+            self.rectangularWall(
+                x,
+                h,
+                ["f" if self.handle else b, "f", tf, "f"],
+                callback=[self.mirrorX(self.xHoles, x), None, self.gripHole],
+                move="up",
+                label="front",
+            )
         else:
-            self.rectangularWall(x, h, [b, "F", tb, "F"],
-                                 callback=[self.xHoles],
-                                 ignore_widths=[1, 6],
-                                 move="up", label="back")
-            self.rectangularWall(x, h, ["f" if self.handle else b, "F", tf, "F"],
-                                 callback=[self.mirrorX(self.xHoles, x),
-                                           None, self.gripHole],
-                                 ignore_widths=[] if self.handle else [1, 6],
-                                 move="up", label="front")
+            self.rectangularWall(
+                x,
+                h,
+                [b, "F", tb, "F"],
+                callback=[self.xHoles],
+                ignore_widths=[1, 6],
+                move="up",
+                label="back",
+            )
+            self.rectangularWall(
+                x,
+                h,
+                ["f" if self.handle else b, "F", tf, "F"],
+                callback=[self.mirrorX(self.xHoles, x), None, self.gripHole],
+                ignore_widths=[] if self.handle else [1, 6],
+                move="up",
+                label="front",
+            )
 
         # floor
         if b != "e":
             if self.handle:
-                self.rectangularWall(x, y, "ffYf", callback=[self.xSlots, self.ySlots], move="up", label="bottom")
+                self.rectangularWall(
+                    x,
+                    y,
+                    "ffYf",
+                    callback=[self.xSlots, self.ySlots],
+                    move="up",
+                    label="bottom",
+                )
             else:
-                self.rectangularWall(x, y, "ffff", callback=[self.xSlots, self.ySlots], move="up", label="bottom")
+                self.rectangularWall(
+                    x,
+                    y,
+                    "ffff",
+                    callback=[self.xSlots, self.ySlots],
+                    move="up",
+                    label="bottom",
+                )
 
         # Inner walls
 
         be = "f" if b != "e" else "e"
 
         for i in range(len(self.sy) - 1):
-            e = [edges.SlottedEdge(self, self.sx, be), "f",
-                 edges.SlottedEdge(self, self.sx[::-1], "e", slots=0.5 * hi), "f"]
+            e = [
+                edges.SlottedEdge(self, self.sx, be),
+                "f",
+                edges.SlottedEdge(self, self.sx[::-1], "e", slots=0.5 * hi),
+                "f",
+            ]
             if self.closedtop and sameh:
-                e = [edges.SlottedEdge(self, self.sx, be), "f",
-                     edges.SlottedEdge(self, self.sx[::-1], "f", slots=0.5 * hi), "f"]
+                e = [
+                    edges.SlottedEdge(self, self.sx, be),
+                    "f",
+                    edges.SlottedEdge(self, self.sx[::-1], "f", slots=0.5 * hi),
+                    "f",
+                ]
 
             self.rectangularWall(x, hi, e, move="up", label=f"inner x {i+1}")
 
         # top / lid
         if self.closedtop and sameh:
             e = "FFFF" if self.top_edge == "f" else "ffff"
-            self.rectangularWall(x, y, e, callback=[
-                self.xSlots, self.ySlots], move="up", label="top")
+            self.rectangularWall(
+                x, y, e, callback=[self.xSlots, self.ySlots], move="up", label="top"
+            )
         else:
             self.drawLid(x, y, self.top_edge)
         self.lid(x, y, self.top_edge)
 
-        self.ctx.restore()
+        self.context.restore()
         self.rectangularWall(x, hi, "ffff", move="right only")
 
         # y walls
@@ -167,33 +230,61 @@ class TypeTray(_TopEdge):
 
         if bh:
             self.trapezoidSideWall(
-                y, h, h+bh, [b, "h", "e", "h"],
-                radius=self.radius, callback=[self.yHoles, ],
-                move="up", label="left side")
+                y,
+                h,
+                h + bh,
+                [b, "h", "e", "h"],
+                radius=self.radius,
+                callback=[
+                    self.yHoles,
+                ],
+                move="up",
+                label="left side",
+            )
             self.trapezoidSideWall(
-                y, h+bh, h, [b, "h", "e", "h"], radius=self.radius,
-                callback=[self.mirrorX(self.yHoles, y), ],
-                move="up", label="right side")
+                y,
+                h + bh,
+                h,
+                [b, "h", "e", "h"],
+                radius=self.radius,
+                callback=[
+                    self.mirrorX(self.yHoles, y),
+                ],
+                move="up",
+                label="right side",
+            )
         else:
             self.rectangularWall(
-                y, h, [b, "f", tl, "f"], callback=[self.yHoles, ],
+                y,
+                h,
+                [b, "f", tl, "f"],
+                callback=[
+                    self.yHoles,
+                ],
                 ignore_widths=[6] if self.handle else [1, 6],
-                move="up", label="left side")
+                move="up",
+                label="left side",
+            )
             self.rectangularWall(
-                y, h, [b, "f", tr, "f"],
-                callback=[self.mirrorX(self.yHoles, y), ],
+                y,
+                h,
+                [b, "f", tr, "f"],
+                callback=[
+                    self.mirrorX(self.yHoles, y),
+                ],
                 ignore_widths=[1] if self.handle else [1, 6],
-                move="up", label="right side")
+                move="up",
+                label="right side",
+            )
 
         # inner walls
         for i in range(len(self.sx) - 1):
-            e = [edges.SlottedEdge(self, self.sy, be, slots=0.5 * hi),
-                 "f", "e", "f"]
+            e = [edges.SlottedEdge(self, self.sy, be, slots=0.5 * hi), "f", "e", "f"]
             if self.closedtop and sameh:
-                e = [edges.SlottedEdge(self, self.sy, be, slots=0.5 * hi),"f",
-                     edges.SlottedEdge(self, self.sy[::-1], "f"), "f"]
+                e = [
+                    edges.SlottedEdge(self, self.sy, be, slots=0.5 * hi),
+                    "f",
+                    edges.SlottedEdge(self, self.sy[::-1], "f"),
+                    "f",
+                ]
             self.rectangularWall(y, hi, e, move="up", label=f"inner y {i+1}")
-
-
-
-

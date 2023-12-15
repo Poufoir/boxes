@@ -174,7 +174,7 @@ protruding underneath.
         The whole tray which contains the cards, including its dividers.
         Cards are at an angle, to save height.
         """
-        self.ctx.save()
+        self.context.save()
 
         tray_inner_length = card_tray_length - self.thickness
         margin_for_score_sheet = 0  # 3 if you want more space for score sheet
@@ -226,7 +226,7 @@ protruding underneath.
 
         # generate spacer
         spacer_height = card_tray_height / 2
-        spacer_spacing = card_tray_width-99.8
+        spacer_spacing = card_tray_width - 99.8
         spacer_upper_width = sloped_wall_posx_at_y0 + spacer_height * tan
         self.trapezoidWall(
             spacer_height,
@@ -266,9 +266,9 @@ protruding underneath.
             ],
         )
 
-        self.ctx.restore()
+        self.context.restore()
         self.rectangularWall(card_tray_length, 0, "FFFF", move="right only")
-        self.ctx.save()
+        self.context.save()
 
         divider_height = sleeved_cards_width - self.thickness * tan
         self.generate_divider(
@@ -285,9 +285,9 @@ protruding underneath.
             ]
         )
 
-        self.ctx.restore()
+        self.context.restore()
         self.rectangularWall(card_tray_width, 0, "ffff", move="right only")
-        self.ctx.save()
+        self.context.save()
 
         self.generate_paper_divider(
             card_tray_width, sleeved_cards_width, slot_depth, spacer_spacing, "up"
@@ -303,7 +303,7 @@ protruding underneath.
                 "(I use 7).",
             ]
         )
-        self.ctx.restore()
+        self.context.restore()
         self.rectangularWall(card_tray_width, 0, "ffff", move="right only")
 
     def explain(self, strings):
@@ -440,7 +440,7 @@ protruding underneath.
         A corner is lowered (the one for the tokens) at the same height as player boxes
         to store 2 levels of small boards there.
         """
-        self.ctx.save()
+        self.context.save()
         height = bigger_box_inner_height
         lowered_height = player_box_height - self.thickness
         lowered_corner_height = height - lowered_height
@@ -492,7 +492,7 @@ protruding underneath.
                 ],
             )
 
-        self.ctx.restore()
+        self.context.restore()
         self.rectangularWall(length, 0, "FFFF", move="right only")
 
     def generate_side_finger_holes(self, row_width, height):
@@ -505,7 +505,7 @@ protruding underneath.
         border_height = 12
         room_box_length = row_width * 2 + self.thickness
 
-        self.ctx.save()
+        self.context.save()
 
         self.rectangularWall(
             room_box_length,
@@ -536,7 +536,7 @@ protruding underneath.
         for _ in range(3):
             self.trapezoidWall(width, height, border_height, "ffef", move="up")
 
-        self.ctx.restore()
+        self.context.restore()
 
         self.rectangularWall(room_box_length, 0, "FFFF", move="right only")
 
@@ -545,7 +545,7 @@ protruding underneath.
         A box in which storing all the bits of a single player,
         including (and designed for) the cardboard bed from Farmers Of The Moor.
         """
-        self.ctx.save()
+        self.context.save()
         bed_inner_height = player_box_height - self.thickness
         bed_inner_length = 66.75
         bed_inner_width = player_box_inner_width
@@ -560,7 +560,7 @@ protruding underneath.
             self, bed_inner_length, bed_head_length, bed_foot_height
         )
         noop_edge = NoopEdge(self)
-        self.ctx.save()
+        self.context.save()
         optim_180_x = (
             bed_inner_length + self.thickness + bed_head_length + 2 * self.spacing
         )
@@ -573,7 +573,7 @@ protruding underneath.
                 move="up",
             )
             self.moveTo(optim_180_x, optim_180_y, -180)
-        self.ctx.restore()
+        self.context.restore()
         self.moveTo(0, bed_inner_height + self.thickness + self.spacing + optim_180_y)
 
         self.rectangularWall(
@@ -592,7 +592,7 @@ protruding underneath.
             ],
         )
 
-        self.ctx.save()
+        self.context.save()
         self.rectangularWall(
             bed_inner_width,
             bed_inner_height,
@@ -606,7 +606,7 @@ protruding underneath.
                 "efee",
                 move="right",
             )
-        self.ctx.restore()
+        self.context.restore()
         self.rectangularWall(
             bed_inner_width,
             bed_inner_height,
@@ -614,7 +614,7 @@ protruding underneath.
             move="up only",
         )
 
-        self.ctx.restore()
+        self.context.restore()
         self.rectangularWall(
             bed_inner_length + bed_head_length + self.spacing - self.thickness,
             0,
@@ -677,20 +677,20 @@ protruding underneath.
         width = outer_width - 2 * self.thickness
         length = outer_length - 2 * self.thickness
         height = outer_height - self.thickness
-        self.ctx.save()
+        self.context.save()
         self.rectangularWall(width, length, "FFFF", move="up")
         for _ in range(2):
             self.rectangularWall(width, height, "ffef", move="up")
-        self.ctx.restore()
+        self.context.restore()
         self.rectangularWall(width, length, "FFFF", move="right only")
         for _ in range(2):
             self.rectangularWall(height, length, "FfFe", move="right")
 
         if dividers:
-            self.ctx.save()
+            self.context.save()
             for _ in range(dividers):
                 self.render_simple_tray_divider(width, height, "up")
-            self.ctx.restore()
+            self.context.restore()
             self.render_simple_tray_divider(width, height, "right only")
 
     def render_simple_tray_divider(self, width, height, move):
@@ -736,7 +736,7 @@ protruding underneath.
         if self.move(move_width, move_length, move, True):
             return
 
-        self.ctx.save()
+        self.context.save()
         self.polyline(
             sqr2 * divider_foot_width,
             135,
@@ -751,7 +751,7 @@ protruding underneath.
             full_width,
             135,
         )
-        self.ctx.restore()
+        self.context.restore()
 
         self.moveTo(-self.burn / sqr2, self.burn * (1 + 1 / sqr2), 45)
         self.moveTo(full_width)

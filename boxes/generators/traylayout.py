@@ -18,8 +18,10 @@ import boxes
 from boxes import *
 from boxes import lids
 
+
 class TrayLayoutFile(Boxes):
     """Generate a layout file for a typetray."""
+
     # This class generates the skeleton text file that can then be edited
     # to describe the actual box
 
@@ -43,8 +45,12 @@ The actual sizes and all other settings can be entered in the second step."""
         self.argparser = argparse.ArgumentParser()
         self.buildArgParser("sx", "sy")
         self.argparser.add_argument(
-            "--output", action="store", type=str, default="traylayout.txt",
-            help="Name of the layout text file.")
+            "--output",
+            action="store",
+            type=str,
+            default="traylayout.txt",
+            help="Name of the layout text file.",
+        )
 
     def open(self) -> None:
         # Use empty open and close methods to avoid initializing the whole drawing infrastructure.
@@ -69,16 +75,22 @@ The actual sizes and all other settings can be entered in the second step."""
         for i, x in enumerate(self.sx):
             r.append(" |" * i + " ,> %.1fmm\n" % x)
 
-        for hwalls, vwalls, floors, y in zip(self.hwalls, self.vwalls, self.floors, self.sy):
+        for hwalls, vwalls, floors, y in zip(
+            self.hwalls, self.vwalls, self.floors, self.sy
+        ):
             r.append("".join("+" + " -"[h] for h in hwalls) + "+\n")
-            r.append("".join((" |"[v] + "X "[f] for v, f in zip(vwalls, floors))) + " |"[vwalls[-1]] + " %.1fmm\n" % y)
+            r.append(
+                "".join((" |"[v] + "X "[f] for v, f in zip(vwalls, floors)))
+                + " |"[vwalls[-1]]
+                + " %.1fmm\n" % y
+            )
         r.append("".join("+" + " -"[h] for h in self.hwalls[-1]) + "+\n")
 
         return "".join(r)
 
     def render(self) -> None:
         self.fillDefault(self.sx, self.sy)
-        with open(self.output, 'w') as f:
+        with open(self.output, "w") as f:
             f.write(str(self))
 
 
@@ -104,12 +116,16 @@ You can replace the space characters representing the floor by a "X" to remove t
         self.buildArgParser("h", "hi", "outside", "sx", "sy")
         if self.UI == "web":
             self.argparser.add_argument(
-                "--layout", action="store", type=str, default="")
+                "--layout", action="store", type=str, default=""
+            )
         else:
             self.argparser.add_argument(
-                "--input", action="store", type=argparse.FileType('r'),
+                "--input",
+                action="store",
+                type=argparse.FileType("r"),
                 default="traylayout.txt",
-                help="layout file")
+                help="layout file",
+            )
             self.layout = None
 
     def vWalls(self, x: int, y: int) -> int:
@@ -135,13 +151,17 @@ You can replace the space characters representing the floor by a "X" to remove t
         if y >= len(self.y):
             return False
 
-        return (x > 0 and self.floors[y][x - 1]) or (x < len(self.x) and self.floors[y][x])
+        return (x > 0 and self.floors[y][x - 1]) or (
+            x < len(self.x) and self.floors[y][x]
+        )
 
     def hFloor(self, x: int, y: int) -> bool:
         """Is there floor under horizontal wall."""
         if x >= len(self.x):
             return False
-        return (y > 0 and self.floors[y - 1][x]) or (y < len(self.y) and self.floors[y][x])
+        return (y > 0 and self.floors[y - 1][x]) or (
+            y < len(self.y) and self.floors[y][x]
+        )
 
     @restore
     def edgeAt(self, edge, x, y, length, angle=0):
@@ -151,7 +171,7 @@ You can replace the space characters representing the floor by a "X" to remove t
 
     def prepare(self):
         if self.layout:
-            self.parse(self.layout.split('\n'))
+            self.parse(self.layout.split("\n"))
         else:
             self.parse(self.input)
 
@@ -166,7 +186,9 @@ You can replace the space characters representing the floor by a "X" to remove t
         self.hi = self.hi or self.h
         self.edges["s"] = boxes.edges.Slot(self, self.hi / 2.0)
         self.edges["C"] = boxes.edges.CrossingFingerHoleEdge(self, self.hi)
-        self.edges["D"] = boxes.edges.CrossingFingerHoleEdge(self, self.hi, outset=self.thickness)
+        self.edges["D"] = boxes.edges.CrossingFingerHoleEdge(
+            self, self.hi, outset=self.thickness
+        )
 
     def walls(self, move=None):
         lx = len(self.x)
@@ -175,7 +197,7 @@ You can replace the space characters representing the floor by a "X" to remove t
         # b = self.burn
         # t2 = self.thickness / 2.0
 
-        self.ctx.save()
+        self.context.save()
 
         # Horizontal Walls
         for y in range(ly + 1):
@@ -216,17 +238,22 @@ You can replace the space characters representing the floor by a "X" to remove t
                 # remove last "slot"
                 lengths.pop()
                 edges.pop()
-                self.rectangularWall(sum(lengths), h, [
-                    boxes.edges.CompoundEdge(self, edges, lengths),
-                    "f" if self.vWalls(end, y) else "e",
-                    "e",
-                    "f" if self.vWalls(start, y) else "e"],
-                                     move="right")
+                self.rectangularWall(
+                    sum(lengths),
+                    h,
+                    [
+                        boxes.edges.CompoundEdge(self, edges, lengths),
+                        "f" if self.vWalls(end, y) else "e",
+                        "e",
+                        "f" if self.vWalls(start, y) else "e",
+                    ],
+                    move="right",
+                )
                 start = end
 
-        self.ctx.restore()
+        self.context.restore()
         self.rectangularWall(10, h, "ffef", move="up only")
-        self.ctx.save()
+        self.context.save()
 
         # Vertical Walls
         for x in range(lx + 1):
@@ -265,22 +292,25 @@ You can replace the space characters representing the floor by a "X" to remove t
                 lengths.pop()
                 edges.pop()
 
-                upper = [{"f": "e",
-                          "s": "s",
-                          "e": "e",
-                          "E": "e",
-                          "C": "e",
-                          "D": "e"}[e] for e in reversed(edges)]
+                upper = [
+                    {"f": "e", "s": "s", "e": "e", "E": "e", "C": "e", "D": "e"}[e]
+                    for e in reversed(edges)
+                ]
                 edges = ["e" if e == "s" else e for e in edges]
-                self.rectangularWall(sum(lengths), h, [
-                    boxes.edges.CompoundEdge(self, edges, lengths),
-                    "eFf"[self.hWalls(x, end)],
-                    boxes.edges.CompoundEdge(self, upper, list(reversed(lengths))),
-                    "eFf"[self.hWalls(x, start)]],
-                                     move="right")
+                self.rectangularWall(
+                    sum(lengths),
+                    h,
+                    [
+                        boxes.edges.CompoundEdge(self, edges, lengths),
+                        "eFf"[self.hWalls(x, end)],
+                        boxes.edges.CompoundEdge(self, upper, list(reversed(lengths))),
+                        "eFf"[self.hWalls(x, start)],
+                    ],
+                    move="right",
+                )
                 start = end
 
-        self.ctx.restore()
+        self.context.restore()
         self.rectangularWall(10, h, "ffef", move="up only")
 
     def base_plate(self, callback=None, move=None):
@@ -297,11 +327,14 @@ You can replace the space characters representing the floor by a "X" to remove t
         if self.move(tw, th, move, True):
             return
 
-        for i, (x, y, a) in enumerate((
+        for i, (x, y, a) in enumerate(
+            (
                 (w, w + b, 0),
                 (tw - w, w + b, 90),
                 (tw - w, th - w + b, 180),
-                (w, th - w + b, 270))):
+                (w, th - w + b, 270),
+            )
+        ):
             self.cc(callback, i, x, y, a)
 
         # Horizontal lines
@@ -321,9 +354,7 @@ You can replace the space characters representing the floor by a "X" to remove t
                             self.fingerHolesAt(posx, posy + t2, self.x[x], angle=0)
                     else:
                         # Top edge
-                        self.edgeAt(e, posx + self.x[x],
-                                    posy + w + b, self.x[x],
-                                    -180)
+                        self.edgeAt(e, posx + self.x[x], posy + w + b, self.x[x], -180)
                         if x == 0 or not self.floors[y][x - 1]:
                             self.edgeAt("e", posx - w, posy + w + b, w, 0)
                         elif y == 0 or not self.floors[y - 1][x - 1]:
@@ -333,12 +364,12 @@ You can replace the space characters representing the floor by a "X" to remove t
                 elif y > 0 and self.floors[y - 1][x]:
                     # Bottom Edge
                     self.edgeAt(e, posx, posy - b + t - w, self.x[x])
-                    if x == 0 or not self.floors[y-1][x - 1]:
+                    if x == 0 or not self.floors[y - 1][x - 1]:
                         self.edgeAt("e", posx - w, posy + t - w - b, w)
                     elif x == 0 or y == ly or not self.floors[y][x - 1]:
                         self.edgeAt("e", posx - t, posy + t - w - b, t)
-                    if x == lx - 1 or y == 0 or not self.floors[y-1][x + 1]:
-                        self.edgeAt("e", posx + self.x[x], posy + t -w - b, w)
+                    if x == lx - 1 or y == 0 or not self.floors[y - 1][x + 1]:
+                        self.edgeAt("e", posx + self.x[x], posy + t - w - b, w)
                 posx += self.x[x] + self.thickness
             posy += self.y[y - 1] + self.thickness
 
@@ -358,21 +389,19 @@ You can replace the space characters representing the floor by a "X" to remove t
                     else:
                         # Right edge
                         self.edgeAt(e, posx + w + b, posy, self.y[y], 90)
-                        if y == 0 or not self.floors[y-1][x-1]:
+                        if y == 0 or not self.floors[y - 1][x - 1]:
                             self.edgeAt("e", posx + w + b, posy + self.y[y], w, 90)
                         elif x == lx or y == 0 or not self.floors[y - 1][x]:
                             self.edgeAt("e", posx + w + b, posy + self.y[y], t, 90)
-                        if y == ly - 1 or not self.floors[y+1][x-1]:
+                        if y == ly - 1 or not self.floors[y + 1][x - 1]:
                             self.edgeAt("e", posx + w + b, posy - w, w, 90)
                 elif x < lx and self.floors[y][x]:
                     # Left edge
                     self.edgeAt(e, posx + t - w - b, posy + self.y[y], self.y[y], -90)
                     if y == 0 or not self.floors[y - 1][x]:
-                        self.edgeAt("e", posx + t - w - b,
-                                    posy + self.y[y] + w, w, -90)
+                        self.edgeAt("e", posx + t - w - b, posy + self.y[y] + w, w, -90)
                     elif x == 0 or y == 0 or not self.floors[y - 1][x - 1]:
-                        self.edgeAt("e", posx + t - w - b,
-                                    posy + self.y[y] + t, t, -90)
+                        self.edgeAt("e", posx + t - w - b, posy + self.y[y] + t, t, -90)
                     if y == ly - 1 or not self.floors[y + 1][x]:
                         self.edgeAt("e", posx + t - w - b, posy, w, -90)
                 posy += self.y[y] + self.thickness
@@ -394,19 +423,19 @@ You can replace the space characters representing the floor by a "X" to remove t
             if m:
                 x.append(float(m.group(2)))
                 continue
-            if line[0] == '+':
+            if line[0] == "+":
                 w = []
-                for n, c in enumerate(line[:len(x) * 2 + 1]):
+                for n, c in enumerate(line[: len(x) * 2 + 1]):
                     if n % 2:
-                        if c == ' ':
+                        if c == " ":
                             w.append(False)
-                        elif c == '-':
+                        elif c == "-":
                             w.append(True)
                         else:
                             pass
                             # raise ValueError(line)
                     else:
-                        if c != '+':
+                        if c != "+":
                             pass
                             # raise ValueError(line)
 
@@ -414,27 +443,36 @@ You can replace the space characters representing the floor by a "X" to remove t
             if line[0] in " |":
                 w = []
                 f = []
-                for n, c in enumerate(line[:len(x) * 2 + 1]):
+                for n, c in enumerate(line[: len(x) * 2 + 1]):
                     if n % 2:
-                        if c in 'xX':
+                        if c in "xX":
                             f.append(False)
-                        elif c == ' ':
+                        elif c == " ":
                             f.append(True)
                         else:
-                            raise ValueError("""Can't parse line %i in layout: expected " ", "x" or "X" for char #%i""" % (nr + 1, n + 1))
+                            raise ValueError(
+                                """Can't parse line %i in layout: expected " ", "x" or "X" for char #%i"""
+                                % (nr + 1, n + 1)
+                            )
                     else:
-                        if c == ' ':
+                        if c == " ":
                             w.append(False)
-                        elif c == '|':
+                        elif c == "|":
                             w.append(True)
                         else:
-                            raise ValueError("""Can't parse line %i in layout: expected " ", or "|" for char #%i""" % (nr + 1, n + 1))
+                            raise ValueError(
+                                """Can't parse line %i in layout: expected " ", or "|" for char #%i"""
+                                % (nr + 1, n + 1)
+                            )
 
                 floors.append(f)
                 vwalls.append(w)
                 m = re.match(r"([ |][ xX])+[ |]\s*(\d*\.?\d+)\s*mm\s*", line)
                 if not m:
-                    raise ValueError("""Can't parse line %i in layout: Can read height of the row""" % (nr + 1))
+                    raise ValueError(
+                        """Can't parse line %i in layout: Can read height of the row"""
+                        % (nr + 1)
+                    )
                 else:
                     y.append(float(m.group(2)))
 
@@ -447,15 +485,27 @@ You can replace the space characters representing the floor by a "X" to remove t
         if ly == 0:
             raise ValueError("Need more than one wall in y direction")
         if len(hwalls) != ly + 1:
-            raise ValueError("Wrong number of horizontal wall lines: %i (%i expected)" % (len(hwalls), ly + 1))
+            raise ValueError(
+                "Wrong number of horizontal wall lines: %i (%i expected)"
+                % (len(hwalls), ly + 1)
+            )
         for nr, walls in enumerate(hwalls):
             if len(walls) != lx:
-                raise ValueError("Wrong number of horizontal walls in line %i: %i (%i expected)" % (nr, len(walls), lx))
+                raise ValueError(
+                    "Wrong number of horizontal walls in line %i: %i (%i expected)"
+                    % (nr, len(walls), lx)
+                )
         if len(vwalls) != ly:
-            raise ValueError("Wrong number of vertical wall lines: %i (%i expected)" % (len(vwalls), ly))
+            raise ValueError(
+                "Wrong number of vertical wall lines: %i (%i expected)"
+                % (len(vwalls), ly)
+            )
         for nr, walls in enumerate(vwalls):
             if len(walls) != lx + 1:
-                raise ValueError("Wrong number of vertical walls in line %i: %i (%i expected)" % (nr, len(walls), lx + 1))
+                raise ValueError(
+                    "Wrong number of vertical walls in line %i: %i (%i expected)"
+                    % (nr, len(walls), lx + 1)
+                )
 
         self.x = x
         self.y = y
@@ -467,5 +517,7 @@ You can replace the space characters representing the floor by a "X" to remove t
         self.prepare()
         self.walls()
         self.base_plate(move="up")
-        self.lid(sum(self.x) + (len(self.x)-1) * self.thickness,
-                 sum(self.y) + (len(self.y)-1) * self.thickness)
+        self.lid(
+            sum(self.x) + (len(self.x) - 1) * self.thickness,
+            sum(self.y) + (len(self.y) - 1) * self.thickness,
+        )

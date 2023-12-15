@@ -23,27 +23,34 @@ class DiceBox(Boxes):
 
     def __init__(self) -> None:
         Boxes.__init__(self)
-        self.addSettingsArgs(
-            edges.FingerJointSettings,
-            surroundingspaces=2.0)
+        self.addSettingsArgs(edges.FingerJointSettings, surroundingspaces=2.0)
         self.addSettingsArgs(
             edges.ChestHingeSettings,
             finger_joints_on_box=True,
-            finger_joints_on_lid=True)
-        self.buildArgParser(
-            x=100,
-            y=100,
-            h=18,
-            outside=True)
+            finger_joints_on_lid=True,
+        )
+        self.buildArgParser(x=100, y=100, h=18, outside=True)
         self.argparser.add_argument(
-            "--lidheight",  action="store", type=float, default=18,
-            help="height of lid in mm")
+            "--lidheight",
+            action="store",
+            type=float,
+            default=18,
+            help="height of lid in mm",
+        )
         self.argparser.add_argument(
-            "--hex_hole_corner_radius",  action="store", type=float, default=5,
-            help="The corner radius of the hexagonal dice holes, in mm")
+            "--hex_hole_corner_radius",
+            action="store",
+            type=float,
+            default=5,
+            help="The corner radius of the hexagonal dice holes, in mm",
+        )
         self.argparser.add_argument(
-            "--magnet_diameter",  action="store", type=float, default=6,
-            help="The diameter of magnets for holding the box closed, in mm")
+            "--magnet_diameter",
+            action="store",
+            type=float,
+            default=6,
+            help="The diameter of magnets for holding the box closed, in mm",
+        )
 
     def diceCB(self):
         t = self.thickness
@@ -72,13 +79,15 @@ class DiceBox(Boxes):
                 ]
             )
         for center in centers:
-            self.regularPolygonHole(x=center[0], y=center[1], n=6, r=r, corner_radius=cr, a=30)
+            self.regularPolygonHole(
+                x=center[0], y=center[1], n=6, r=r, corner_radius=cr, a=30
+            )
 
         # magnets
         d = self.magnet_diameter
-        mo = t + d/2
+        mo = t + d / 2
         self.hole(mo, mo, d=d)
-        self.hole(xi-mo, mo, d=d)
+        self.hole(xi - mo, mo, d=d)
 
     def render(self):
         x, y, h, hl = self.x, self.y, self.h, self.lidheight
@@ -94,30 +103,30 @@ class DiceBox(Boxes):
         hy = self.edges["O"].startwidth()
         hy2 = self.edges["P"].startwidth()
 
-        e1 = edges.CompoundEdge(self, "eF", (hy-t, h-hy+t))
-        e2 = edges.CompoundEdge(self, "Fe", (h-hy+t, hy-t))
+        e1 = edges.CompoundEdge(self, "eF", (hy - t, h - hy + t))
+        e2 = edges.CompoundEdge(self, "Fe", (h - hy + t, hy - t))
         e_back = ("F", e1, "F", e2)
 
         p = self.edges["o"].settings.pin_height
-        e_inner_1 = edges.CompoundEdge(self, "fe", (y-p, p))
-        e_inner_2 = edges.CompoundEdge(self, "ef", (p, y-p))
+        e_inner_1 = edges.CompoundEdge(self, "fe", (y - p, p))
+        e_inner_2 = edges.CompoundEdge(self, "ef", (p, y - p))
         e_inner_topbot = ("f", e_inner_1, "f", e_inner_2)
 
-        self.ctx.save()
+        self.context.save()
 
         self.rectangularWall(x, y, e_inner_topbot, move="up", callback=[self.diceCB])
         self.rectangularWall(x, y, e_inner_topbot, move="up", callback=[self.diceCB])
-        self.rectangularWall(x, h, "FFFF", ignore_widths=[1,2,5,6], move="up")
+        self.rectangularWall(x, h, "FFFF", ignore_widths=[1, 2, 5, 6], move="up")
         self.rectangularWall(x, h, e_back, move="up")
-        self.rectangularWall(x, hl, "FFFF", ignore_widths=[1,2,5,6], move="up")
-        self.rectangularWall(x, hl-hy2+t, "FFqF", move="up")
+        self.rectangularWall(x, hl, "FFFF", ignore_widths=[1, 2, 5, 6], move="up")
+        self.rectangularWall(x, hl - hy2 + t, "FFqF", move="up")
 
-        self.ctx.restore()
+        self.context.restore()
         self.rectangularWall(x, y, "ffff", move="right only")
 
         self.rectangularWall(y, x, "ffff", move="up")
         self.rectangularWall(y, x, "ffff", move="up")
-        self.rectangularWall(y, hl-hy2+t, "Ffpf", ignore_widths=[5,6], move="up")
-        self.rectangularWall(y, h-hy+t, "OfFf", ignore_widths=[5,6], move="up")
-        self.rectangularWall(y, h-hy+t, "Ffof", ignore_widths=[5,6], move="up")
-        self.rectangularWall(y, hl-hy2+t, "PfFf", ignore_widths=[5,6], move="up")
+        self.rectangularWall(y, hl - hy2 + t, "Ffpf", ignore_widths=[5, 6], move="up")
+        self.rectangularWall(y, h - hy + t, "OfFf", ignore_widths=[5, 6], move="up")
+        self.rectangularWall(y, h - hy + t, "Ffof", ignore_widths=[5, 6], move="up")
+        self.rectangularWall(y, hl - hy2 + t, "PfFf", ignore_widths=[5, 6], move="up")

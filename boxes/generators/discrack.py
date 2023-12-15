@@ -67,10 +67,11 @@ def offset_radius_in_square(squareside, angle, outset):
         len_up = (squareside / 2 + step_down) / sin(angle)
 
         return min(len_up, len_right)
-    else: # angle < 0
-        len_down = - (squareside / 2 - step_down) / sin(angle)
+    else:  # angle < 0
+        len_down = -(squareside / 2 - step_down) / sin(angle)
 
         return min(len_down, len_right)
+
 
 class DiscRack(Boxes):
     """A rack for storing disk-shaped objects vertically next to each other"""
@@ -82,22 +83,42 @@ class DiscRack(Boxes):
 
         self.buildArgParser(sx="20*10")
         self.argparser.add_argument(
-            "--disc_diameter", action="store", type=float, default=150.0,
-            help="Disc diameter in mm")
+            "--disc_diameter",
+            action="store",
+            type=float,
+            default=150.0,
+            help="Disc diameter in mm",
+        )
         self.argparser.add_argument(
-            "--disc_thickness", action="store", type=float, default=5.0,
-            help="Thickness of the discs in mm")
+            "--disc_thickness",
+            action="store",
+            type=float,
+            default=5.0,
+            help="Thickness of the discs in mm",
+        )
 
         self.argparser.add_argument(
-            "--lower_factor", action="store", type=float, default=0.75,
-            help="Position of the lower rack grids along the radius")
+            "--lower_factor",
+            action="store",
+            type=float,
+            default=0.75,
+            help="Position of the lower rack grids along the radius",
+        )
         self.argparser.add_argument(
-            "--rear_factor", action="store", type=float, default=0.75,
-            help="Position of the rear rack grids along the radius")
+            "--rear_factor",
+            action="store",
+            type=float,
+            default=0.75,
+            help="Position of the rear rack grids along the radius",
+        )
 
         self.argparser.add_argument(
-            "--disc_outset", action="store", type=float, default=3.0,
-            help="Additional space kept between the disks and the outbox of the rack")
+            "--disc_outset",
+            action="store",
+            type=float,
+            default=3.0,
+            help="Additional space kept between the disks and the outbox of the rack",
+        )
 
         # These can be parameterized, but the default value of pulling them up
         # to the box front is good enough for so many cases it'd only clutter
@@ -105,18 +126,22 @@ class DiscRack(Boxes):
         #
         # The parameters can be resurfaced when there is something like rare or
         # advanced settings.
-        '''
+        """
         self.argparser.add_argument(
             "--lower_outset", action="store", type=float, default=0.0,
             help="Space in front of the disk slits (0: automatic)")
         self.argparser.add_argument(
             "--rear_outset", action="store", type=float, default=0.0,
             help="Space above the disk slits (0: automatic)")
-        '''
+        """
 
         self.argparser.add_argument(
-            "--angle", action="store", type=float, default=18,
-            help="Backwards slant of the rack")
+            "--angle",
+            action="store",
+            type=float,
+            default=18,
+            help="Backwards slant of the rack",
+        )
         self.addSettingsArgs(edges.FingerJointSettings)
 
     def parseArgs(self, *args, **kwargs):
@@ -134,26 +159,30 @@ class DiscRack(Boxes):
         self.lower_halfslit = r * sqrt(1 - self.lower_factor**2)
         self.rear_halfslit = r * sqrt(1 - self.rear_factor**2)
 
-        if True: # self.lower_outset == 0: # when lower_outset parameter is re-enabled
-            toplim = offset_radius_in_square(self.outer, self.angle, r * self.lower_factor)
+        if True:  # self.lower_outset == 0: # when lower_outset parameter is re-enabled
+            toplim = offset_radius_in_square(
+                self.outer, self.angle, r * self.lower_factor
+            )
             # With typical positive angles, the lower surface of board will be limiting
-            bottomlim = offset_radius_in_square(self.outer, self.angle, r * self.lower_factor + self.thickness)
+            bottomlim = offset_radius_in_square(
+                self.outer, self.angle, r * self.lower_factor + self.thickness
+            )
             self.lower_outset = min(toplim, bottomlim) - self.lower_halfslit
 
-        if True: # self.rear_outset == 0: # when rear_outset parameter is re-enabled
+        if True:  # self.rear_outset == 0: # when rear_outset parameter is re-enabled
             # With typical positive angles, the upper surface of board will be limiting
-            toplim = offset_radius_in_square(self.outer, -self.angle, r * self.rear_factor)
-            bottomlim = offset_radius_in_square(self.outer, -self.angle, r * self.rear_factor + self.thickness)
+            toplim = offset_radius_in_square(
+                self.outer, -self.angle, r * self.rear_factor
+            )
+            bottomlim = offset_radius_in_square(
+                self.outer, -self.angle, r * self.rear_factor + self.thickness
+            )
             self.rear_outset = min(toplim, bottomlim) - self.rear_halfslit
 
         # front outset, space to radius, space to rear part, plus nothing as fingers extend out
-        self.lower_size = self.lower_outset + \
-                self.lower_halfslit + \
-                r * self.rear_factor
+        self.lower_size = self.lower_outset + self.lower_halfslit + r * self.rear_factor
 
-        self.rear_size = r * self.lower_factor + \
-                self.rear_halfslit + \
-                self.rear_outset
+        self.rear_size = r * self.lower_factor + self.rear_halfslit + self.rear_outset
 
         self.warn_on_demand()
 
@@ -169,10 +198,16 @@ class DiscRack(Boxes):
                 return "absent"
 
         if self.rear_outset < self.thickness:
-            warnings.append("Rear upper constraint is %s. Consider increasing the disc outset parameter, or move the angle away from 45°." % word_thickness(self.rear_outset))
+            warnings.append(
+                "Rear upper constraint is %s. Consider increasing the disc outset parameter, or move the angle away from 45°."
+                % word_thickness(self.rear_outset)
+            )
 
         if self.lower_outset < self.thickness:
-            warnings.append("Lower front constraint is %s. Consider increasing the disc outset parameter, or move the angle away from 45°." % word_thickness(self.lower_outset))
+            warnings.append(
+                "Lower front constraint is %s. Consider increasing the disc outset parameter, or move the angle away from 45°."
+                % word_thickness(self.lower_outset)
+            )
 
         # Are the discs supported where the grids meet?
 
@@ -181,18 +216,24 @@ class DiscRack(Boxes):
         inner_reardistance = r * self.lower_factor - self.rear_halfslit
 
         if inner_lowerdistance < 0 or inner_reardistance < 0:
-            warnings.append("Corner is inside the disc radios, discs would not be supported. Consider increasing the factor parameters.")
+            warnings.append(
+                "Corner is inside the disc radios, discs would not be supported. Consider increasing the factor parameters."
+            )
 
         # Won't the type-H edge on the rear side make the whole contraption
         # wiggle?
 
         max_slitlengthplush = offset_radius_in_square(
-                self.outer, self.angle, r * self.rear_factor + self.thickness)
-        slitlengthplush = self.rear_halfslit + self.thickness * ( 1 +
-                self.edgesettings['FingerJoint']['edge_width'])
+            self.outer, self.angle, r * self.rear_factor + self.thickness
+        )
+        slitlengthplush = self.rear_halfslit + self.thickness * (
+            1 + self.edgesettings["FingerJoint"]["edge_width"]
+        )
 
         if slitlengthplush > max_slitlengthplush:
-            warnings.append("Joint would protrude from lower box edge. Consider increasing the the disc outset parameter, or move the angle away from 45°.")
+            warnings.append(
+                "Joint would protrude from lower box edge. Consider increasing the the disc outset parameter, or move the angle away from 45°."
+            )
 
         # Can the discs be removed at all?
         # Does not need explicit checking, for Thales' theorem tells us that at
@@ -211,20 +252,18 @@ class DiscRack(Boxes):
     def sidewall_holes(self):
         r = self.disc_diameter / 2
 
-        self.moveTo(self.outer/2, self.outer/2, -self.angle)
+        self.moveTo(self.outer / 2, self.outer / 2, -self.angle)
         # can now move down to paint horizontal lower part, or right to paint
         # vertical rear part
         with self.saved_context():
             self.moveTo(
-                    r * self.rear_factor,
-                    -r * self.lower_factor - self.thickness/2,
-                    90)
+                r * self.rear_factor, -r * self.lower_factor - self.thickness / 2, 90
+            )
             self.fingerHolesAt(0, 0, self.lower_size)
         with self.saved_context():
             self.moveTo(
-                    r * self.rear_factor + self.thickness/2,
-                    -r * self.lower_factor,
-                    0)
+                r * self.rear_factor + self.thickness / 2, -r * self.lower_factor, 0
+            )
             self.fingerHolesAt(0, 0, self.rear_size)
 
         if self.debug:
@@ -239,7 +278,9 @@ class DiscRack(Boxes):
             total_x += x
             self.rectangularHole(inset, center_x, 2 * halfslit, self.disc_thickness)
             if self.debug:
-                self.ctx.rectangle(inset - halfslit, center_x - x/2, 2 * halfslit, x)
+                self.context.rectangle(
+                    inset - halfslit, center_x - x / 2, 2 * halfslit, x
+                )
 
     def lower_holes(self):
         r = self.disc_diameter / 2
@@ -260,7 +301,21 @@ class DiscRack(Boxes):
         self.rear_factor = min(self.rear_factor, 0.99)
 
         self.rectangularWall(o, o, "eeee", move="right", callback=[self.sidewall_holes])
-        self.rectangularWall(o, o, "eeee", move="right mirror", callback=[self.sidewall_holes])
+        self.rectangularWall(
+            o, o, "eeee", move="right mirror", callback=[self.sidewall_holes]
+        )
 
-        self.rectangularWall(self.lower_size, sum(self.sx), "fffe", move="right", callback=[self.lower_holes])
-        self.rectangularWall(self.rear_size, sum(self.sx), "fefh", move="right", callback=[self.rear_holes])
+        self.rectangularWall(
+            self.lower_size,
+            sum(self.sx),
+            "fffe",
+            move="right",
+            callback=[self.lower_holes],
+        )
+        self.rectangularWall(
+            self.rear_size,
+            sum(self.sx),
+            "fefh",
+            move="right",
+            callback=[self.rear_holes],
+        )

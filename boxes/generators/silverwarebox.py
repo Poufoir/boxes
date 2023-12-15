@@ -24,44 +24,68 @@ class Silverware(Boxes):
 
     ui_group = "Unstable"
 
-
     def __init__(self) -> None:
         Boxes.__init__(self)
 
         self.buildArgParser(x=250, y=154, h=120)
 
         self.argparser.add_argument(
-            "--cornerradius", action="store", type=int, default=30,
-            help="Radius of the corners")
+            "--cornerradius",
+            action="store",
+            type=int,
+            default=30,
+            help="Radius of the corners",
+        )
         self.argparser.add_argument(
-            "--handleheight", action="store", type=int, default=150,
-            help="Height of the handle")
+            "--handleheight",
+            action="store",
+            type=int,
+            default=150,
+            help="Height of the handle",
+        )
         self.argparser.add_argument(
-            "--handlewidth", action="store", type=int, default=120,
-            help="Width of the handle")
-
+            "--handlewidth",
+            action="store",
+            type=int,
+            default=120,
+            help="Width of the handle",
+        )
 
     ####################################################################
     ### Parts
     ####################################################################
 
     def basePlate(self, x, y, r):
-        self.roundedPlate(x, y, r, extend_corners=False, callback=[
-            lambda: self.fingerHolesAt(x / 3.0 - r, 0, 0.5 * (y - self.thickness)),
-            lambda: self.fingerHolesAt(x / 6.0, 0, 0.5 * (y - self.thickness)),
-            lambda: self.fingerHolesAt(y / 2.0 - r, 0, x),
-            lambda: self.fingerHolesAt(x / 2.0 - r, 0, 0.5 * (y - self.thickness))
-        ])
+        self.roundedPlate(
+            x,
+            y,
+            r,
+            extend_corners=False,
+            callback=[
+                lambda: self.fingerHolesAt(x / 3.0 - r, 0, 0.5 * (y - self.thickness)),
+                lambda: self.fingerHolesAt(x / 6.0, 0, 0.5 * (y - self.thickness)),
+                lambda: self.fingerHolesAt(y / 2.0 - r, 0, x),
+                lambda: self.fingerHolesAt(x / 2.0 - r, 0, 0.5 * (y - self.thickness)),
+            ],
+        )
 
     def wall(self, x=100, y=100, h=100, r=0):
-        self.surroundingWall(x, y, r, h, top="E", bottom='h', callback={
-            0: lambda: self.fingerHolesAt(x / 6.0, 0, h - 10),
-            4: lambda: self.fingerHolesAt(x / 3.0 - r, 0, h - 10),
-            1: lambda: self.fingerHolesAt(y / 2.0 - r, 0, h - 10),
-            3: lambda: self.fingerHolesAt(y / 2.0 - r, 0, h - 10),
-            2: lambda: self.fingerHolesAt(x / 2.0 - r, 0, h - 10),
-        },
-                             move="up")
+        self.surroundingWall(
+            x,
+            y,
+            r,
+            h,
+            top="E",
+            bottom="h",
+            callback={
+                0: lambda: self.fingerHolesAt(x / 6.0, 0, h - 10),
+                4: lambda: self.fingerHolesAt(x / 3.0 - r, 0, h - 10),
+                1: lambda: self.fingerHolesAt(y / 2.0 - r, 0, h - 10),
+                3: lambda: self.fingerHolesAt(y / 2.0 - r, 0, h - 10),
+                2: lambda: self.fingerHolesAt(x / 2.0 - r, 0, h - 10),
+            },
+            move="up",
+        )
 
     @restore
     def centerWall(self, x, h):
@@ -79,7 +103,7 @@ class Silverware(Boxes):
         self.corner(90)
         self.edges["f"](h - 10)
         self.corner(90)
-        self.ctx.stroke()
+        self.context.stroke()
 
     ##################################################
     ### main
@@ -105,4 +129,3 @@ class Silverware(Boxes):
 
         self.moveTo(-3.0 * (l + 2 * t + 8 * b), h - 10 + 2 * t + 8 * b)
         self.basePlate(x, y, r)
-

@@ -23,11 +23,10 @@ from boxes.drawing import SVGSurface, PSSurface, LBRN2Surface, Context
 
 
 class Formats:
-
     pstoedit_candidates = ["/usr/bin/pstoedit", "pstoedit", "pstoedit.exe"]
     ps2pdf_candidates = ["/usr/bin/ps2pdf", "ps2pdf", "ps2pdf.exe"]
 
-    _BASE_FORMATS = ['svg', 'svg_Ponoko', 'ps', 'lbrn2']
+    _BASE_FORMATS = ["svg", "svg_Ponoko", "ps", "lbrn2"]
 
     formats = {
         "svg": None,
@@ -42,14 +41,13 @@ class Formats:
     }
 
     http_headers = {
-        "svg": [('Content-type', 'image/svg+xml; charset=utf-8')],
-        "svg_Ponoko": [('Content-type', 'image/svg+xml; charset=utf-8')],
-        "ps": [('Content-type', 'application/postscript')],
-        "lbrn2": [('Content-type', 'application/lbrn2')],
-        "dxf": [('Content-type', 'image/vnd.dxf')],
-        "plt": [('Content-type', ' application/vnd.hp-hpgl')],
-        "gcode": [('Content-type', 'text/plain; charset=utf-8')],
-
+        "svg": [("Content-type", "image/svg+xml; charset=utf-8")],
+        "svg_Ponoko": [("Content-type", "image/svg+xml; charset=utf-8")],
+        "ps": [("Content-type", "application/postscript")],
+        "lbrn2": [("Content-type", "application/lbrn2")],
+        "dxf": [("Content-type", "image/vnd.dxf")],
+        "plt": [("Content-type", " application/vnd.hp-hpgl")],
+        "gcode": [("Content-type", "text/plain; charset=utf-8")],
         # "" : [('Content-type', '')],
     }
 
@@ -76,18 +74,22 @@ class Formats:
         else:
             surface = PSSurface(filename)
 
-        ctx = Context(surface)
-        return surface, ctx
+        context = Context(surface)
+        return surface, context
 
     def convert(self, filename, fmt, metadata=None):
-
         if fmt not in self._BASE_FORMATS:
             fd, tmpfile = tempfile.mkstemp(dir=os.path.dirname(filename))
-            cmd = self.formats[fmt].format(
-                pstoedit=self.pstoedit,
-                ps2pdf=self.ps2pdf,
-                input=filename,
-                output=tmpfile).split()
+            cmd = (
+                self.formats[fmt]
+                .format(
+                    pstoedit=self.pstoedit,
+                    ps2pdf=self.ps2pdf,
+                    input=filename,
+                    output=tmpfile,
+                )
+                .split()
+            )
 
             err = subprocess.call(cmd)
 

@@ -16,11 +16,10 @@
 from boxes import edges
 import boxes
 import math
-from boxes.default_box import DefaultBoxes
-from boxes.utils import edge_init
+from boxes.settings import Settings
 
 
-class LidSettings(edges.Settings):
+class LidSettings(Settings):
 
     """Settings for the Lid
     Values:
@@ -139,12 +138,12 @@ class Lid:
             elif self.handle.startswith("knob"):
                 h = v = 3 * t  # adjust for different styles
                 self.moveTo((x - t) / 2 + self.burn, (y - t) / 2 + self.burn, 180)
-                self.ctx.stroke()
+                self.context.stroke()
                 with self.saved_context():
                     self.set_source_color(boxes.Color.INNER_CUT)
-                    for l in (h, v, h, v):
-                        self.polyline(l, -90, t, -90, l, 90)
-                self.ctx.stroke()
+                    for ligne in (h, v, h, v):
+                        self.polyline(ligne, -90, t, -90, ligne, 90)
+                self.context.stroke()
 
         return cb
 
@@ -163,15 +162,15 @@ class Lid:
         if style == "long_rounded":
             r = min(hh / 2, x / 4)
             poly += [t + hh - r, (90, r)]
-            l = x / 2 - 2 * r
+            ligne = x / 2 - 2 * r
         elif style == "long_trapezoid":
             poly += [t, (45, t), (hh - t) * 2**0.5, (45, t)]
-            l = x / 2 - 2 * hh
+            ligne = x / 2 - 2 * hh
         elif style == "long_doublerounded":
             poly += [t, 90, 0, (-90, hh / 2), 0, (90, hh / 2)]
-            l = x / 2 - 2 * hh
+            ligne = x / 2 - 2 * hh
 
-        poly = [x / 2 + t] + poly + [l] + list(reversed(poly))
+        poly = [x / 2 + t] + poly + [ligne] + list(reversed(poly))
         self.polyline(*poly)
 
         self.move(tw, th, move)
@@ -242,9 +241,9 @@ class Lid:
             s.edgeObjects(self, "aA.")
 
         t = self.thickness
-        l = math.radians(180 - 2 * angle) * self.getChestR(x, angle)
+        ligne = math.radians(180 - 2 * angle) * self.getChestR(x, angle)
 
-        tw = l + 6 * t
+        tw = ligne + 6 * t
         th = y + 2 * t
 
         if self.move(tw, th, move, True, label=label):
@@ -252,7 +251,7 @@ class Lid:
 
         self.cc(callback, 0, self.edges["A"].startwidth() + self.burn)
         self.edges["A"](3 * t)
-        self.edges["X"](l, y + 2 * t)
+        self.edges["X"](ligne, y + 2 * t)
         self.edges["A"](3 * t)
         self.corner(90)
         self.cc(callback, 1)
@@ -260,7 +259,7 @@ class Lid:
         self.corner(90)
         self.cc(callback, 2, self.edges["A"].startwidth() + self.burn)
         self.edges["A"](3 * t)
-        self.edge(l)
+        self.edge(ligne)
         self.edges["A"](3 * t)
         self.corner(90)
         self.cc(callback, 3)
@@ -268,108 +267,3 @@ class Lid:
         self.corner(90)
 
         self.move(tw, th, move, label=label)
-
-
-class _TopEdge(DefaultBoxes):
-    def addTopEdgeSettings(
-        self,
-        fingerjoint={},
-        stackable={},
-        hinge={},
-        cabinethinge={},
-        slideonlid={},
-        click={},
-        roundedtriangle={},
-        mounting={},
-        handle={},
-    ):
-        edge_init(
-            self,
-            [
-                {"settings": edges.FingerJointSettings, "args": fingerjoint},
-                {"settings": edges.StackableSettings, "args": stackable},
-                {"settings": edges.HingeSettings, "args": hinge},
-                {"settings": edges.CabinetHingeSettings, "args": cabinethinge},
-                {"settings": edges.SlideOnLidSettings, "args": slideonlid},
-                {"settings": edges.ClickSettings, "args": click},
-                {
-                    "settings": edges.RoundedTriangleEdgeSettings,
-                    "args": roundedtriangle,
-                },
-                {"settings": edges.MountingSettings, "args": mounting},
-                {"settings": edges.HandleEdgeSettings, "args": handle},
-            ],
-        )
-
-    def topEdges(self, top_edge):
-        """Return top edges belonging to given main edge type
-        as a list containing edge for left, back, right, front.
-        """
-        tl = tb = tr = tf = self.edges.get(top_edge, self.edges["e"])
-        check_square = tl.char
-
-        if check_square == "i":
-            tb = tf = "e"
-            tl = "j"
-        elif check_square == "k":
-            tl = tr = "e"
-        elif check_square == "L":
-            tl, tf, tr = "M", "e", "N"
-        elif check_square == "v":
-            tl = tr = tf = "e"
-        elif check_square == "t":
-            tf = tb = "e"
-        elif check_square == "G":
-            tl = tb = tr = tf = "e"
-            side = self.edges[tl.char].settings.side
-            if side == edges.MountingSettings.PARAM_LEFT:
-                tl = "G"
-            elif side == edges.MountingSettings.PARAM_RIGHT:
-                tr = "G"
-            elif side == edges.MountingSettings.PARAM_FRONT:
-                tf = "G"
-            else:  # PARAM_BACK
-                tb = "G"
-        elif check_square == "y":
-            tl = tb = tr = tf = "e"
-            if self.edges[check_square].settings.on_sides is True:
-                tl = tr = "y"
-            else:
-                tb = tf = "y"
-        elif check_square == "Y":
-            tl = tb = tr = tf = "h"
-            if self.edges["Y"].settings.on_sides is True:
-                tl = tr = "Y"
-            else:
-                tb = tf = "Y"
-        return [tl, tb, tr, tf]
-
-    def drawLid(self, x, y, top_edge, bedBolts=[None, None]):
-        d2, d3 = bedBolts
-        if top_edge == "c":
-            self.rectangularWall(
-                x, y, "CCCC", bedBolts=[d2, d3, d2, d3], move="up", label="top"
-            )
-        elif top_edge == "f":
-            self.rectangularWall(x, y, "FFFF", move="up", label="top")
-        elif top_edge in "FhŠY":
-            self.rectangularWall(x, y, "ffff", move="up", label="top")
-        elif top_edge == "L":
-            self.rectangularWall(x, y, "Enlm", move="up", label="lid top")
-        elif top_edge == "i":
-            self.rectangularWall(x, y, "EJeI", move="up", label="lid top")
-        elif top_edge == "k":
-            outset = self.edges["k"].settings.outset
-            self.edges["k"].settings.setValues(self.thickness, outset=True)
-            lx = x / 2.0 - 0.1 * self.thickness
-            self.edges["k"].settings.setValues(self.thickness, grip_length=5)
-            self.rectangularWall(lx, y, "IeJe", move="right", label="lid top left")
-            self.rectangularWall(lx, y, "IeJe", move="mirror up", label="lid top right")
-            self.rectangularWall(lx, y, "IeJe", move="left only", label="invisible")
-            self.edges["k"].settings.setValues(self.thickness, outset=outset)
-        elif top_edge == "v":
-            self.rectangularWall(x, y, "VEEE", move="up", label="lid top")
-            self.edges["v"].parts(move="up")
-        else:
-            return False
-        return True

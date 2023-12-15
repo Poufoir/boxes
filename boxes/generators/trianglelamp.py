@@ -24,11 +24,11 @@ class CornerEdge(edges.Edge):
 
     def __call__(self, length, bedBolts=None, bedBoltSettings=None, **kw):
         with self.saved_context():
-            self.ctx.stroke()
+            self.context.stroke()
             self.set_source_color(Color.ANNOTATIONS)
             self.moveTo(0, self.startwidth())
             self.edge(length)
-            self.ctx.stroke()
+            self.context.stroke()
             self.set_source_color(Color.OUTER_CUT)
         super().__call__(length, bedBolts=None, bedBoltSettings=None, **kw)
 

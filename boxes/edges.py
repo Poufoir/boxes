@@ -16,8 +16,9 @@ from __future__ import annotations
 
 import inspect
 import math
-import re
 from abc import ABC, abstractmethod
+
+from boxes.settings import Settings
 from typing import Any
 
 from boxes import gears
@@ -115,196 +116,6 @@ class Bolts(BoltPolicy):
             (float(pos) * (self.bolts + 1) / self.fingers) - 0.01
         ) != math.floor((float(pos + 1) * (self.bolts + 1) / self.fingers) - 0.01)
 
-
-#############################################################################
-### Settings
-#############################################################################
-
-
-class Settings:
-    """Generic Settings class
-
-    Used by different other classes to store measurements and details.
-    Supports absolute values and settings that grow with the thickness
-    of the material used.
-
-    Overload the absolute_params and relative_params class attributes with
-    the supported keys and default values. The values are available via
-    attribute access.
-    """
-
-    absolute_params: dict[str, Any] = {}  # TODO find better typing.
-    relative_params: dict[str, Any] = {}  # TODO find better typing.
-
-    @classmethod
-    def parserArguments(cls, parser, prefix=None, **defaults):
-        prefix = prefix or cls.__name__[: -len("Settings")]
-
-        lines = cls.__doc__.split("\n")
-
-        # Parse doc string
-        descriptions = {}
-        r = re.compile(r"^ +\* +(\S+) +: .* : +(.*)")
-        for l in lines:
-            m = r.search(l)
-            if m:
-                descriptions[m.group(1)] = m.group(2)
-
-        group = parser.add_argument_group(lines[0] or lines[1])
-        group.prefix = prefix
-        for name, default in sorted(cls.absolute_params.items()) + sorted(
-            cls.relative_params.items()
-        ):
-            # Handle choices
-            choices = None
-            if isinstance(default, tuple):
-                choices = default
-                t = type(default[0])
-                for val in default:
-                    if type(val) is not t or type(val) not in (bool, int, float, str):
-                        raise ValueError("Type not supported: %r", val)
-                default = default[0]
-
-            # Overwrite default
-            if name in defaults:
-                default = type(default)(defaults[name])
-
-            if not isinstance(default, (bool, int, float, str)):
-                raise ValueError("Type not supported: %r", default)
-            if not isinstance(default, bool):
-                from boxes import BoolArg
-
-                t = BoolArg()
-            else:
-                t = type(default)
-
-            group.add_argument(
-                f"--{prefix}_{name}",
-                type=t,
-                action="store",
-                default=default,
-                choices=choices,
-                help=descriptions.get(name),
-            )
-
-    @classmethod
-    def get_arguments(cls, prefix=None, **defaults):
-        prefix = prefix or cls.__name__[: -len("Settings")]
-
-        lines = cls.__doc__.split("\n")
-
-        # Parse doc string
-        descriptions = {}
-        r = re.compile(r"^ +\* +(\S+) +: .* : +(.*)")
-        for l in lines:
-            m = r.search(l)
-            if m:
-                descriptions[m.group(1)] = m.group(2)
-
-        group = []
-        for name, default in sorted(cls.absolute_params.items()) + sorted(
-            cls.relative_params.items()
-        ):
-            # Handle choices
-            if isinstance(default, tuple):
-                t = type(default[0])
-                for val in default:
-                    if not isinstance(val, t) or not isinstance(
-                        val, (bool, int, float, str)
-                    ):
-                        raise ValueError("Type not supported: %r", val)
-                default = default[0]
-
-            # Overwrite default
-            if name in defaults:
-                default = type(default)(defaults[name])
-
-            if not isinstance(default, (bool, int, float, str)):
-                raise ValueError("Type not supported: %r", default)
-            if isinstance(default, bool):
-                from boxes import BoolArg
-
-                t = BoolArg()
-            else:
-                t = type(default)
-            group.append((f"{prefix}_{name}", default))
-        return group
-
-    def __init__(self, thickness, relative: bool = True, **kw) -> None:
-        self.values = {}
-        for name, value in self.absolute_params.items():
-            if isinstance(value, tuple):
-                value = value[0]
-            if type(value) not in (bool, int, float, str):
-                raise ValueError("Type not supported: %r", value)
-            self.values[name] = value
-
-        self.thickness = thickness
-        factor = 1.0
-        if relative:
-            factor = thickness
-        for name, value in self.relative_params.items():
-            self.values[name] = value * factor
-        self.setValues(thickness, relative, **kw)
-
-    def edgeObjects(self, boxes, chars: str = "", add: bool = True):
-        """
-        Generate Edge objects using this kind of settings
-
-        :param boxes: Boxes object
-        :param chars: sequence of chars to be used by Edge objects
-        :param add: add the resulting Edge objects to the Boxes object's edges
-        """
-        edges: list[Any] = []
-        return self._edgeObjects(edges, boxes, chars, add)
-
-    def _edgeObjects(self, edges, boxes, chars: str, add: bool):
-        for i, edge in enumerate(edges):
-            try:
-                char = chars[i]
-                edge.char = char
-            except IndexError:
-                pass
-            except TypeError:
-                pass
-        if add:
-            boxes.addParts(edges)
-        return edges
-
-    def setValues(self, thickness, relative: bool = True, **kw):
-        """
-        Set values
-
-        :param thickness: thickness of the material used
-        :param relative: Do scale by thickness (Default value = True)
-        :param kw: parameters to set
-        """
-        factor = 1.0
-        if relative:
-            factor = thickness
-        for name, value in kw.items():
-            if name in self.absolute_params:
-                self.values[name] = value
-            elif name in self.relative_params:
-                self.values[name] = value * factor
-            else:
-                raise ValueError(
-                    f"Unknown parameter for {self.__class__.__name__}: {name}"
-                )
-        self.checkValues()
-
-    def checkValues(self) -> None:
-        """
-        Check if all values are in the right range. Raise ValueError if needed.
-        """
-        pass
-
-    def __getattr__(self, name):
-        if "values" in self.__dict__ and name in self.values:
-            return self.values[name]
-        raise AttributeError
-
-
 #############################################################################
 ### Edges
 #############################################################################
@@ -318,7 +129,7 @@ class BaseEdge(ABC):
 
     def __init__(self, boxes, settings) -> None:
         self.boxes = boxes
-        self.ctx = boxes.ctx
+        self.context = boxes.context
         self.settings = settings
 
     def __getattr__(self, name):
@@ -467,7 +278,7 @@ class MountingEdge(BaseEdge):
             width = ds
 
         if num != int(num):
-            raise ValueError(f"MountingEdge: num needs to be an integer number")
+            raise ValueError("MountingEdge: num needs to be an integer number")
 
         check_bounds(margin, 0, 0.5, "margin")
         if not dh == 0:
@@ -773,9 +584,9 @@ class CompoundEdge(BaseEdge):
             raise ValueError("Wrong length for CompoundEdge")
         lastwidth = self.types[0].startwidth()
 
-        for e, l in zip(self.types, self.lengths):
+        for e, lenght in zip(self.types, self.lengths):
             self.step(e.startwidth() - lastwidth)
-            e(l)
+            e(lenght)
             lastwidth = e.endwidth()
 
 
@@ -829,8 +640,8 @@ class SlottedEdge(BaseEdge):
         return self.edge.margin()
 
     def __call__(self, length, **kw):
-        for l in self.sections[:-1]:
-            self.edge(l)
+        for ligne in self.sections[:-1]:
+            self.edge(ligne)
 
             if self.slots:
                 Slot(self.boxes, self.slots)(self.settings.thickness)
@@ -974,9 +785,9 @@ class FingerJointEdge(BaseEdge, FingerJointBase):
             elif style == "barbs":
                 n = int((h - 0.1 * t) // (0.3 * t))
                 a = math.degrees(math.atan(0.5))
-                l = 5**0.5
+                ligne = 5**0.5
                 poly = [h - n * 0.3 * t] + (
-                    [-45, 0.1 * 2**0.5 * t, 45 + a, l * 0.1 * t, -a, 0] * n
+                    [-45, 0.1 * 2**0.5 * t, 45 + a, ligne * 0.1 * t, -a, 0] * n
                 )
                 self.polyline(0, -90, *poly, 90, f, 90, *reversed(poly), -90)
             elif style == "snap" and f > 1.9 * t:
@@ -985,7 +796,7 @@ class FingerJointEdge(BaseEdge, FingerJointBase):
                 d = 4 * t
                 d2 = d + 1 * t
                 a = math.degrees(math.atan((0.5 * t) / (h + d2)))
-                l = (h + d2) / math.cos(math.radians(a))
+                ligne = (h + d2) / math.cos(math.radians(a))
                 poly = [
                     0,
                     90,
@@ -999,7 +810,7 @@ class FingerJointEdge(BaseEdge, FingerJointBase):
                     90 - a12,
                     0.5 * t,
                     90 - a,
-                    l,
+                    ligne,
                     +a,
                     0,
                     (-180, 0.1 * t),
@@ -1090,7 +901,7 @@ class FingerHoles(FingerJointBase):
 
     def __init__(self, boxes, settings) -> None:
         self.boxes = boxes
-        self.ctx = boxes.ctx
+        self.context = boxes.context
         self.settings = settings
 
     def __call__(self, x, y, length, angle=90, bedBolts=None, bedBoltSettings=None):
@@ -1123,7 +934,7 @@ class FingerHoles(FingerJointBase):
                 bedBolts = None
 
             if self.boxes.debug:
-                self.ctx.rectangle(
+                self.context.rectangle(
                     b,
                     -self.settings.width / 2 + b,
                     length - 2 * b,
@@ -1279,7 +1090,7 @@ class StackableBaseEdge(BaseEdge):
     def __call__(self, length, **kw):
         s = self.settings
         r = s.height / 2.0 / (1 - math.cos(math.radians(s.angle)))
-        l = r * math.sin(math.radians(s.angle))
+        ligne = r * math.sin(math.radians(s.angle))
         p = 1 if self.bottom else -1
 
         if self.bottom and s.bottom_stabilizers:
@@ -1293,7 +1104,7 @@ class StackableBaseEdge(BaseEdge):
         self.boxes.edge(s.width, tabs=1)
         self.boxes.corner(p * s.angle, r)
         self.boxes.corner(-p * s.angle, r)
-        self.boxes.edge(length - 2 * s.width - 4 * l)
+        self.boxes.edge(length - 2 * s.width - 4 * ligne)
         self.boxes.corner(-p * s.angle, r)
         self.boxes.corner(p * s.angle, r)
         self.boxes.edge(s.width, tabs=1)
@@ -1508,13 +1319,13 @@ class Hinge(BaseEdge):
             + 0.5 * self.settings.thickness
         )
 
-    def __call__(self, l, **kw):
+    def __call__(self, ligne, **kw):
         hlen = getattr(self, self.settings.style + "len", self.outsetlen)()
 
         if self.layout & 1:
             getattr(self, self.settings.style, self.outset)()
 
-        self.edge(l - (self.layout & 1) * hlen - bool(self.layout & 2) * hlen, tabs=2)
+        self.edge(ligne - (self.layout & 1) * hlen - bool(self.layout & 2) * hlen, tabs=2)
 
         if self.layout & 2:
             getattr(self, self.settings.style, self.outset)(True)
@@ -1607,33 +1418,33 @@ class HingePin(BaseEdge):
         self.polyline(*pin)
 
     def flushlen(self):
-        l = self.settings.hingestrength + self.settings.axle
+        ligne = self.settings.hingestrength + self.settings.axle
 
         if self.settings.outset:
-            l += self.settings.hingestrength + 0.5 * self.settings.thickness
+            ligne += self.settings.hingestrength + 0.5 * self.settings.thickness
 
-        return l
+        return ligne
 
-    def __call__(self, l, **kw):
+    def __call__(self, ligne, **kw):
         plen = getattr(self, self.settings.style + "len", self.outsetlen)()
-        glen = l * self.settings.grip_percentage / 100 + self.settings.grip_length
+        glen = ligne * self.settings.grip_percentage / 100 + self.settings.grip_length
 
         if not self.settings.outset:
             glen = 0.0
 
-        glen = min(glen, l - plen)
+        glen = min(glen, ligne - plen)
 
         if self.layout & 1 and self.layout & 2:
             getattr(self, self.settings.style, self.outset)()
-            self.edge(l - 2 * plen, tabs=2)
+            self.edge(ligne - 2 * plen, tabs=2)
             getattr(self, self.settings.style, self.outset)(True)
         elif self.layout & 1:
             getattr(self, self.settings.style, self.outset)()
-            self.edge(l - plen - glen, tabs=2)
+            self.edge(ligne - plen - glen, tabs=2)
             self.edges["g"](glen)
         else:
             self.edges["g"](glen)
-            self.edge(l - plen - glen, tabs=2)
+            self.edge(ligne - plen - glen, tabs=2)
             getattr(self, self.settings.style, self.outset)(True)
 
 
@@ -1699,23 +1510,23 @@ class ChestHinge(BaseEdge):
         self.char = "oO"[reversed]
         self.description = self.description + (" (start)", " (end)")[reversed]
 
-    def __call__(self, l, **kw):
+    def __call__(self, ligne, **kw):
         t = self.settings.thickness
         p = self.settings.pin_height
         s = self.settings.hinge_strength
         pinh = self.settings.pinheight()
         if self.reversed:
-            self.hole(l + t, 0, p, tabs=4)
-            self.rectangularHole(l + 0.5 * t, -0.5 * pinh, t, pinh)
+            self.hole(ligne + t, 0, p, tabs=4)
+            self.rectangularHole(ligne + 0.5 * t, -0.5 * pinh, t, pinh)
         else:
             self.hole(-t, -s - p, p, tabs=4)
             self.rectangularHole(-0.5 * t, -s - p - 0.5 * pinh, t, pinh)
 
         if self.settings.finger_joints_on_box:
             final_segment = t - s
-            draw_rest_of_edge = lambda: self.edges["F"](l - p)
+            draw_rest_of_edge = lambda: self.edges["F"](ligne - p)
         else:
-            final_segment = l + t - p - s
+            final_segment = ligne + t - p - s
             draw_rest_of_edge = lambda: None
 
         poly = (0, -180, t, (270, p + s), 0, -90, final_segment)
@@ -2587,45 +2398,45 @@ class FlexEdge(BaseEdge):
         sections = max(int((h - connection) // width), 1)
         sheight = ((h - connection) / sections) - connection
 
-        self.ctx.stroke()
+        self.context.stroke()
         for i in range(1, lines):
             pos = i * dist + leftover / 2
 
             if i % 2:
-                self.ctx.move_to(pos, 0)
-                self.ctx.line_to(pos, connection + sheight)
+                self.context.move_to(pos, 0)
+                self.context.line_to(pos, connection + sheight)
 
                 for j in range((sections - 1) // 2):
-                    self.ctx.move_to(
+                    self.context.move_to(
                         pos, (2 * j + 1) * sheight + (2 * j + 2) * connection
                     )
-                    self.ctx.line_to(pos, (2 * j + 3) * (sheight + connection))
+                    self.context.line_to(pos, (2 * j + 3) * (sheight + connection))
 
                 if not sections % 2:
-                    self.ctx.move_to(pos, h - sheight - connection)
-                    self.ctx.line_to(pos, h)
+                    self.context.move_to(pos, h - sheight - connection)
+                    self.context.line_to(pos, h)
             else:
                 if sections % 2:
-                    self.ctx.move_to(pos, h)
-                    self.ctx.line_to(pos, h - connection - sheight)
+                    self.context.move_to(pos, h)
+                    self.context.line_to(pos, h - connection - sheight)
 
                     for j in range((sections - 1) // 2):
-                        self.ctx.move_to(
+                        self.context.move_to(
                             pos, h - ((2 * j + 1) * sheight + (2 * j + 2) * connection)
                         )
-                        self.ctx.line_to(pos, h - (2 * j + 3) * (sheight + connection))
+                        self.context.line_to(pos, h - (2 * j + 3) * (sheight + connection))
 
                 else:
                     for j in range(sections // 2):
-                        self.ctx.move_to(
+                        self.context.move_to(
                             pos, h - connection - 2 * j * (sheight + connection)
                         )
-                        self.ctx.line_to(pos, h - 2 * (j + 1) * (sheight + connection))
+                        self.context.line_to(pos, h - 2 * (j + 1) * (sheight + connection))
 
-        self.ctx.stroke()
-        self.ctx.move_to(0, 0)
-        self.ctx.line_to(x, 0)
-        self.ctx.translate(*self.ctx.get_current_point())
+        self.context.stroke()
+        self.context.move_to(0, 0)
+        self.context.line_to(x, 0)
+        self.context.translate(*self.context.get_current_point())
 
 
 class GearSettings(Settings):

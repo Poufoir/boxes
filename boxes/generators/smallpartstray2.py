@@ -194,7 +194,7 @@ If there are no inner front to back walls just add everything to one side wall a
 
         # x sides
 
-        self.ctx.save()
+        self.context.save()
 
         # outer walls - front/back
         if bh:
@@ -307,7 +307,7 @@ If there are no inner front to back walls just add everything to one side wall a
         self.drawLid(x, y, self.top_edge)  # XXX deal with front
         self.lid(x, y, self.top_edge)
 
-        self.ctx.restore()
+        self.context.restore()
         self.rectangularWall(x, hi, "ffff", move="right only")
 
         # y walls

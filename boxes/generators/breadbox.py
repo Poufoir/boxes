@@ -91,7 +91,7 @@ class BreadBox(DefaultBoxes):
 
         self.moveTo(t, t)
 
-        self.ctx.save()
+        self.context.save()
 
         n = self.n
         a = 90.0 / n
@@ -104,7 +104,7 @@ class BreadBox(DefaultBoxes):
             self.moveTo(ls, 0, -a)
         self.moveTo(0, 0, a / 2)
         self.fingerHolesAt(0, 0.5 * t, l / 2 - r, 0)
-        self.ctx.restore()
+        self.context.restore()
 
         self.edges["f"](l)
         self.polyline(
@@ -223,12 +223,12 @@ class BreadBox(DefaultBoxes):
         self.radius = r = min(r, h / 2)
 
         t = self.thickness
-        self.ctx.save()
+        self.context.save()
         self.side(x, h, r, move="right")
         self.side(x, h, r, move="right")
         self.rectangularWall(y, h, "fFfF", move="right")
 
-        self.ctx.restore()
+        self.context.restore()
         self.side(x, h, r, move="up only")
 
         self.rectangularWall(x, y, "FEFF", move="right")
